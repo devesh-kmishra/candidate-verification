@@ -4,6 +4,9 @@ import { fetchCandidateQueue } from "../api/candidates";
 import type { Candidate } from "../types/candidates";
 import { timeAgo } from "../utils/time";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL as string;
 
 const statusProgressColorMap = {
   completed: "bg-green-500",
@@ -14,6 +17,13 @@ const statusProgressColorMap = {
 function capitalizeFirstLetter(string: string) {
   return string.charAt(0).toUpperCase() + string.slice(1);
 }
+
+const searchCandidates = async (query: string) => {
+  const res = await axios.get(`${API_BASE_URL}/api/candidates/search`, {
+    params: { q: query },
+  });
+  return res.data;
+};
 
 export default function VerificationQueue() {
   const [activeTab, setActiveTab] = useState<
@@ -28,6 +38,9 @@ export default function VerificationQueue() {
     failed: 0,
   });
 
+  const [searchTerm, setSearchTerm] = useState("");
+  const [, setIsSearching] = useState(false);
+
   const navigate = useNavigate();
 
   const handleOnClick = (candidateId: string) => {
@@ -35,6 +48,8 @@ export default function VerificationQueue() {
   };
 
   useEffect(() => {
+    if (searchTerm) return;
+
     async function loadQueue() {
       try {
         const data = await fetchCandidateQueue(activeTab);
@@ -60,7 +75,25 @@ export default function VerificationQueue() {
     }
 
     loadQueue();
-  }, [activeTab]);
+  }, [activeTab, searchTerm]);
+
+  useEffect(() => {
+    if (!searchTerm.trim()) return;
+
+    const timer = setTimeout(async () => {
+      try {
+        setIsSearching(true);
+        const data = await searchCandidates(searchTerm);
+        setCandidates(data.results);
+      } catch (error) {
+        console.error("Search failed", error);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
   return (
     <section className="mx-auto mt-8 max-w-360 rounded-2xl border border-white/10 bg-linear-to-br from-[#0b0f1a] to-[#0a0e17] p-6">
@@ -78,6 +111,8 @@ export default function VerificationQueue() {
             <Search className="h-4 w-4" />
             <input
               placeholder="Search candidates..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
               className="bg-transparent outline-none placeholder:text-white/40"
             />
           </div>
@@ -129,12 +164,14 @@ export default function VerificationQueue() {
 
           <tbody>
             {candidates.map((c) => {
-              const progressParts = c.progress.split("/");
+              const progressParts = c.progress?.split("/") ?? ["0", "1"];
               const progressPercent =
                 (Number(progressParts[0]) / Number(progressParts[1])) * 100;
 
+              const riskScore = c.riskScore ?? 0;
+
               const riskLabel =
-                c.riskScore < 30 ? "LOW" : c.riskScore < 60 ? "MEDIUM" : "HIGH";
+                riskScore < 30 ? "LOW" : riskScore < 60 ? "MEDIUM" : "HIGH";
 
               return (
                 <tr
@@ -190,10 +227,10 @@ export default function VerificationQueue() {
                     </div>
                   </td>
 
-                  <td className="px-4 py-3 font-medium">{c.tatDays}d</td>
+                  <td className="px-4 py-3 font-medium">{c.tatDays ?? "--"}d</td>
 
                   <td className="px-4 py-3 text-white/60">
-                    {timeAgo(c.lastUpdated)}
+                    {c.lastUpdated ? timeAgo(c.lastUpdated) : "--"}
                   </td>
 
                   <td className="px-4 py-3">
