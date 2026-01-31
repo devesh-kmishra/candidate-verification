@@ -1,0 +1,26 @@
+@import "tailwindcss";
+
+html,
+body,
+#root {
+  height: 100%;
+  overflow: hidden;
+  background-color: #ffffff;
+}
+
+@theme {
+  --font-inter: "Inter", sans-serif;
+
+  --color-panel: #f8fafc;
+  --color-panelBorder: #e2e8f0;
+  --color-mutedText: #64748b;
+  --color-accent: #f97316;
+  --color-accentDark: #ea580c;
+  --color-warningBg: #fff7ed;
+  --color-warningBorder: #fed7aa;
+}
+
+body {
+  font-family: var(--font-inter);
+  color: #0f172a;
+}

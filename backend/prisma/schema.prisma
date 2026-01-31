@@ -1,0 +1,240 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Candidate {
+  id                 String    @id @default(uuid())
+  name               String
+  email              String    @unique
+  phone              String?
+  city               String?
+  joiningDesignation String?
+  resumeUrl          String?
+  resumeUploadedAt   DateTime?
+  createdAt          DateTime  @default(now())
+
+  employments       EmploymentVerification[]
+  notes             CandidateNote[]
+  verificationCases VerificationCase[]
+
+  @@index([city])
+  @@index([joiningDesignation])
+  @@index([createdAt])
+}
+
+model CandidateNote {
+  id          String   @id @default(uuid())
+  candidateId String
+  note        String
+  createdBy   String?
+  createdAt   DateTime @default(now())
+
+  candidate Candidate @relation(fields: [candidateId], references: [id])
+}
+
+// DEPRECATED: New system uses VerificationCase -> VerificationItem
+model EmploymentVerification {
+  id                   String             @id @default(uuid())
+  candidateId          String
+  previousCompanyName  String
+  previousCompanyEmail String
+  designation          String
+  tenureFrom           DateTime
+  tenureTo             DateTime?
+  reasonForExit        String?
+  hrContactName        String?
+  hrContactPhone       String?
+  status               VerificationStatus @default(PENDING)
+  verificationToken    String             @unique
+  tokenExpiresAt       DateTime
+  completedAt          DateTime?
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt()
+
+  candidate   Candidate                @relation(fields: [candidateId], references: [id])
+  response    EmpVerificationResponse?
+  callingLogs CallingLog[]
+
+  @@index([candidateId])
+  @@index([status])
+  @@index([tokenExpiresAt])
+  @@index([candidateId, status])
+}
+
+model EmpVerificationResponse {
+  id                       String   @id @default(uuid())
+  employmentVerificationId String   @unique
+  answers                  Json
+  submittedAt              DateTime @default(now())
+
+  employmentVerification EmploymentVerification @relation(fields: [employmentVerificationId], references: [id])
+  documents              VerificationDocument[]
+}
+
+model CallingLog {
+  id                       String   @id @default(uuid())
+  employmentVerificationId String
+  callTime                 DateTime
+  outcome                  String
+  notes                    String?
+
+  employmentVerification EmploymentVerification @relation(fields: [employmentVerificationId], references: [id])
+}
+
+model VerificationDocument {
+  id         String       @id @default(uuid())
+  responseId String
+  type       DocumentType
+  fileUrl    String
+  uploadedAt DateTime     @default(now())
+
+  response EmpVerificationResponse @relation(fields: [responseId], references: [id])
+}
+
+model VerificationConfig {
+  id             String   @id @default(uuid())
+  organizationId String
+  isActive       Boolean  @default(true)
+  version        Int
+  createdAt      DateTime @default(now())
+
+  verificationTypes VerificationTypeConfig[]
+  verificationCases VerificationCase[]
+}
+
+model VerificationTypeConfig {
+  id                   String           @id @default(uuid())
+  verificationConfigId String
+  type                 VerificationType
+  enabled              Boolean          @default(true)
+  mandatory            Boolean          @default(true)
+  minContacts          Int
+  maxContacts          Int?
+  executionMode        ExecutionMode
+  createdAt            DateTime         @default(now())
+
+  verificationConfig VerificationConfig             @relation(fields: [verificationConfigId], references: [id])
+  questions          VerificationQuestionTemplate[]
+  verificationItems  VerificationItem[]
+}
+
+model VerificationQuestionTemplate {
+  id                       String       @id @default(uuid())
+  verificationTypeConfigId String
+  key                      String
+  label                    String
+  type                     QuestionType
+  required                 Boolean      @default(true)
+  options                  Json?
+  order                    Int
+  createdAt                DateTime     @default(now())
+
+  verificationTypeConfig VerificationTypeConfig @relation(fields: [verificationTypeConfigId], references: [id])
+}
+
+model VerificationCase {
+  id                   String             @id @default(uuid())
+  candidateId          String
+  verificationConfigId String
+  status               VerificationStatus
+  riskScore            Int                @default(0)
+  startedAt            DateTime           @default(now())
+  completedAt          DateTime?
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt()
+
+  candidate          Candidate          @relation(fields: [candidateId], references: [id])
+  verificationConfig VerificationConfig @relation(fields: [verificationConfigId], references: [id])
+  verificationItems  VerificationItem[]
+}
+
+model VerificationItem {
+  id                       String             @id @default(uuid())
+  verificationCaseId       String
+  verificationTypeConfigId String
+  status                   VerificationStatus
+  mandatory                Boolean
+  executionMode            ExecutionMode
+  startedAt                DateTime?
+  completedAt              DateTime?
+  createdAt                DateTime           @default(now())
+  updatedAt                DateTime           @updatedAt()
+
+  verificationCase       VerificationCase       @relation(fields: [verificationCaseId], references: [id])
+  verificationTypeConfig VerificationTypeConfig @relation(fields: [verificationTypeConfigId], references: [id])
+  contacts               VerificationContact[]
+}
+
+model VerificationContact {
+  id                 String                    @id @default(uuid())
+  verificationItemId String
+  name               String
+  email              String
+  phone              String?
+  token              String                    @unique
+  tokenExpiresAt     DateTime
+  status             VerificationContactStatus
+  contactedAt        DateTime?
+  respondedAt        DateTime?
+  createdAt          DateTime                  @default(now())
+  updatedAt          DateTime                  @updatedAt()
+
+  verificationItem      VerificationItem       @relation(fields: [verificationItemId], references: [id])
+  verificationResponses VerificationResponse[]
+}
+
+model VerificationResponse {
+  id                    String   @id @default(uuid())
+  verificationContactId String
+  questionKey           String
+  answer                Json
+  createdAt             DateTime @default(now())
+
+  verificationContact VerificationContact @relation(fields: [verificationContactId], references: [id])
+}
+
+enum VerificationStatus {
+  PENDING
+  IN_PROGRESS
+  CLEAR
+  DISCREPANCY
+  FAILED
+}
+
+enum DocumentType {
+  OFFER_LETTER
+  RELIEVING_LETTER
+}
+
+enum VerificationType {
+  PREVIOUS_EMPLOYMENT
+  REFERENCE
+  BACKGROUND
+  CUSTOM
+}
+
+enum ExecutionMode {
+  PARALLEL
+  SEQUENTIAL
+}
+
+enum QuestionType {
+  TEXT
+  YES_NO
+  MCQ
+  DATE
+  DATE_RANGE
+  FILE
+}
+
+enum VerificationContactStatus {
+  PENDING
+  CONTACTED
+  RESPONDED
+  EXPIRED
+}
