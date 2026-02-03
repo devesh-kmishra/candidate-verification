@@ -73,7 +73,6 @@ model EmpVerificationResponse {
   submittedAt              DateTime @default(now())
 
   employmentVerification EmploymentVerification @relation(fields: [employmentVerificationId], references: [id])
-  documents              VerificationDocument[]
 }
 
 model CallingLog {
@@ -87,13 +86,13 @@ model CallingLog {
 }
 
 model VerificationDocument {
-  id         String       @id @default(uuid())
-  responseId String
-  type       DocumentType
-  fileUrl    String
-  uploadedAt DateTime     @default(now())
+  id                    String       @id @default(uuid())
+  verificationContactId String
+  type                  DocumentType
+  fileUrl               String
+  uploadedAt            DateTime     @default(now())
 
-  response EmpVerificationResponse @relation(fields: [responseId], references: [id])
+  verificationContact VerificationContact @relation(fields: [verificationContactId], references: [id])
 }
 
 model VerificationConfig {
@@ -151,6 +150,9 @@ model VerificationCase {
   candidate          Candidate          @relation(fields: [candidateId], references: [id])
   verificationConfig VerificationConfig @relation(fields: [verificationConfigId], references: [id])
   verificationItems  VerificationItem[]
+
+  @@index([candidateId])
+  @@index([status])
 }
 
 model VerificationItem {
@@ -168,6 +170,9 @@ model VerificationItem {
   verificationCase       VerificationCase       @relation(fields: [verificationCaseId], references: [id])
   verificationTypeConfig VerificationTypeConfig @relation(fields: [verificationTypeConfigId], references: [id])
   contacts               VerificationContact[]
+
+  @@index([verificationCaseId])
+  @@index([status])
 }
 
 model VerificationContact {
@@ -176,6 +181,7 @@ model VerificationContact {
   name               String
   email              String
   phone              String?
+  source             VerificationContactSource
   token              String                    @unique
   tokenExpiresAt     DateTime
   status             VerificationContactStatus
@@ -186,16 +192,25 @@ model VerificationContact {
 
   verificationItem      VerificationItem       @relation(fields: [verificationItemId], references: [id])
   verificationResponses VerificationResponse[]
+  verificationDocuments VerificationDocument[]
+
+  @@index([verificationItemId])
+  @@index([token])
+  @@index([status])
 }
 
 model VerificationResponse {
-  id                    String   @id @default(uuid())
+  id                    String       @id @default(uuid())
   verificationContactId String
   questionKey           String
+  questionLabel         String
+  questionType          QuestionType
   answer                Json
-  createdAt             DateTime @default(now())
+  createdAt             DateTime     @default(now())
 
   verificationContact VerificationContact @relation(fields: [verificationContactId], references: [id])
+
+  @@index([verificationContactId])
 }
 
 enum VerificationStatus {
@@ -237,4 +252,11 @@ enum VerificationContactStatus {
   CONTACTED
   RESPONDED
   EXPIRED
+}
+
+enum VerificationContactSource {
+  HR
+  REFERENCE
+  BACKGROUND
+  VENDOR
 }

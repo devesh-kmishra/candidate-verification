@@ -1,49 +1,15 @@
-# 🎙️ AI Mock Interview Interface
+# Candidate Verification Application
 
-A modern, responsive **AI-powered mock interview UI** built with **React**, **Tailwind CSS**, and **Framer Motion**.  
-The interface simulates a real-time interview experience with live waveform animations, recording controls, timers, and structured interview questions.
+- Only leaf nodes (responses, contacts) are written manually. All higher-level statuses are derived.
 
----
+### How To Test Sending Verification Email
 
-## 🚀 Features
+1. Submit candidate form
 
-### 🧠 Interview Experience
-- AI interviewer panel with animated waveform
-- Camera preview placeholder for user
-- Real-time interview timer (resets on reload)
-- Current and previous interview questions
-- Difficulty badges (Easy / Medium / Hard)
-- Category tagging (Behavioral, Problem Solving, etc.)
+2. Check logs
 
-### 🎙️ Recording & Controls
-- Start recording button with hover & scale animations
-- Repeat question & exit interview actions
-- Footer helper text guidance
-- Camera & microphone status icons
+3. Open Ethereal inbox
 
-### 🎨 UI & UX
-- Pixel-perfect Figma-style dark UI
-- Gradient backgrounds & glow effects
-- Fully responsive (Desktop, Tablet, Mobile)
-- Smooth entry animations using Framer Motion
+4. Click verification link
 
----
-
-## 🛠 Tech Stack
-
-- **React (TypeScript)**
-- **Tailwind CSS**
-- **Framer Motion**
-- **Lucide React Icons**
-
----
-
----
-
-## 📦 Installation
-
-```bash
-npm install
-npm install framer-motion lucide-react
-npm run dev
-```
+5. Submit verifier form
