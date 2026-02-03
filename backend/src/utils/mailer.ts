@@ -1,30 +1,25 @@
 import "dotenv/config";
 import nodemailer from "nodemailer";
 
-const PORT = process.env.PORT;
-const transporter = nodemailer.createTransport({
-  host: "smtp.ethereal.email",
-  port: 587,
+export const mailer = nodemailer.createTransport({
+  host: process.env.SMTP_HOST,
+  port: Number(process.env.SMTP_PORT),
+  secure: false,
   auth: {
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS,
   },
 });
 
-export async function sendVerificationEmail(to: string, token: string) {
-  // todo: change later
-  if (process.env.NODE_ENV === "production") return;
-
-  const link = `http://localhost:${PORT}/verify/employment/${token}`;
-
-  await transporter.sendMail({
-    from: '"HR Verification" <no-reply@verify.com>',
-    to,
-    subject: "Employment Verification Request",
-    html: `
-      <p>Please verify employment details by clicking below:</p>
-      <a href="${link}">${link}</a>
-      <p>This link expires in 7 days.</p>
-    `,
+export async function sendEmail(params: {
+  to: string;
+  subject: string;
+  html: string;
+}) {
+  await mailer.sendMail({
+    from: process.env.SMTP_FROM,
+    to: params.to,
+    subject: params.subject,
+    html: params.html,
   });
 }

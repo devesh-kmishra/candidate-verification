@@ -1,0 +1,65 @@
+import { Request, Response } from "express";
+import { prisma } from "../lib/prisma";
+import { recalculateVerificationStatus } from "../services/verification.service";
+import { Prisma } from "../../generated/prisma/client";
+import { validateAnswer } from "../utils/prisma";
+
+export const submitVerificationResponse = async (
+  req: Request,
+  res: Response,
+) => {
+  const token = req.params.token as string;
+  const { answers } = req.body;
+
+  const contact = await prisma.verificationContact.findUnique({
+    where: { token },
+  });
+
+  if (!contact) {
+    return res.status(404).json({ error: "Invalid token" });
+  }
+
+  const item = await prisma.verificationItem.findUnique({
+    where: { id: contact.verificationItemId },
+    include: {
+      verificationTypeConfig: {
+        include: {
+          questions: true,
+        },
+      },
+    },
+  });
+
+  if (!item) {
+    return res.status(400).json({ error: "Invalid verification item" });
+  }
+
+  const questionMap = Object.fromEntries(
+    item.verificationTypeConfig.questions.map((q) => [
+      q.key,
+      { label: q.label, type: q.type },
+    ]),
+  );
+
+  await prisma.verificationResponse.createMany({
+    data: Object.entries(answers).map(([key, value]) => ({
+      verificationContactId: contact.id,
+      questionKey: key,
+      questionLabel: questionMap[key]?.label ?? key,
+      questionType: questionMap[key]?.type ?? "TEXT",
+      answer: validateAnswer(questionMap[key].type, value),
+    })),
+  });
+
+  await prisma.verificationContact.update({
+    where: { id: contact.id },
+    data: {
+      status: "RESPONDED",
+      respondedAt: new Date(),
+    },
+  });
+
+  await recalculateVerificationStatus(contact.verificationItemId);
+
+  res.json({ message: "Verification submitted successfully" });
+};
