@@ -1,6 +1,6 @@
 import { Camera, Mic, RotateCcw, LogOut, Sparkles } from "lucide-react";
-import { AILoadingDots } from "./AILoadingDots";
-import { PreviousQuestions } from "./PreviousQuestions";
+import { AILoadingDots } from "../../components/common/AlloadingDots"
+import { PreviousQuestions } from "../../components/verification/PreviousQuestions"
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 
