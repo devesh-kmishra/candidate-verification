@@ -66,3 +66,11 @@ export function mapVerificationTypeToSource(
       return VerificationContactSource.HR;
   }
 }
+
+export function toInputJson(value: unknown): Prisma.InputJsonValue {
+  if (value === undefined || value === null) {
+    throw new Error("Invalid JSON value: null or undefined");
+  }
+
+  return value as Prisma.InputJsonValue;
+}

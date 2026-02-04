@@ -1,8 +1,8 @@
 import { Request, Response } from "express";
 import { prisma } from "../lib/prisma";
 import { VerificationStatus } from "../../generated/prisma/enums";
-import { EmploymentVerification } from "../../generated/prisma/client";
 import cloudinary from "../lib/cloudinary";
+import { createCandidateSummary } from "../services/candidateSummary.service";
 
 type Timeline = {
   timestamp: Date;
@@ -12,12 +12,6 @@ type Timeline = {
   documentType?: string;
   fileUrl?: string;
   message: string;
-};
-
-type EmploymentBreakdownItem = {
-  company: string;
-  status: VerificationStatus;
-  risk: number;
 };
 
 type QueueStatus = "all" | "pending" | "completed" | "failed";
@@ -169,68 +163,9 @@ export const getEmploymentTimeline = async (req: Request, res: Response) => {
 export const getCandidateSummary = async (req: Request, res: Response) => {
   const candidateId = req.params.candidateId as string;
 
-  const employments = await prisma.employmentVerification.findMany({
-    where: { candidateId },
-  });
-  const notes = await prisma.candidateNote.findMany({
-    where: { candidateId },
-    orderBy: { createdAt: "desc" },
-    take: 5,
-  });
+  const summary = await createCandidateSummary(candidateId);
 
-  if (employments.length === 0) {
-    return res.json({
-      candidateId,
-      overallStatus: "CLEAR",
-      riskScore: 0,
-      remarks: ["No previous employments found"],
-      employmentBreakdown: [],
-      hrNotes: notes,
-    });
-  }
-
-  const breakdown: EmploymentBreakdownItem[] = employments.map(
-    (emp: EmploymentVerification) => {
-      const risk = getRiskForStatus(emp.status);
-
-      return {
-        company: emp.previousCompanyName,
-        status: emp.status,
-        risk,
-      };
-    },
-  );
-
-  const highestRisk = Math.max(
-    ...breakdown.map((b: EmploymentBreakdownItem) => b.risk),
-  );
-  const multipleEmploymentPenalty = employments.length > 1 ? 5 : 0;
-  const riskScore = Math.min(highestRisk + multipleEmploymentPenalty, 100);
-
-  const remarks: string[] = [];
-
-  if (
-    breakdown.some((b: EmploymentBreakdownItem) => b.status === "DISCREPANCY")
-  ) {
-    remarks.push("One or more employment verifications have discrepancies");
-  }
-
-  if (breakdown.some((b: EmploymentBreakdownItem) => b.status === "FAILED")) {
-    remarks.push("One or more employment verifications failed");
-  }
-
-  if (employments.length > 1) {
-    remarks.push("Multiple previous employments detected");
-  }
-
-  res.json({
-    candidateId,
-    overallStatus: getOverallStatus(riskScore),
-    riskScore,
-    remarks,
-    employmentBreakdown: breakdown,
-    hrNotes: notes,
-  });
+  res.json(summary);
 };
 
 export const addCandidateNote = async (req: Request, res: Response) => {
@@ -437,12 +372,6 @@ function getRiskForStatus(status: string): number {
     default:
       return 0;
   }
-}
-
-function getOverallStatus(riskScore: number) {
-  if (riskScore <= 20) return "CLEAR";
-  if (riskScore <= 50) return "REVIEW";
-  return "HIGH_RISK";
 }
 
 function deriveQueueStatus(statuses: VerificationStatus[]): QueueStatus {

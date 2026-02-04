@@ -1,7 +1,11 @@
-import { VerificationContactStatus } from "../../generated/prisma/enums";
+import {
+  AuditEntityType,
+  VerificationContactStatus,
+} from "../../generated/prisma/enums";
 import { prisma } from "../lib/prisma";
 import { verificationEmailTemplate } from "../templates/verificationEmail";
 import { sendEmail } from "../utils/mailer";
+import { createAuditLog } from "./audit.service";
 
 export async function sendVerificationEmail(contactId: string) {
   const contact = await prisma.verificationContact.findUnique({
@@ -37,6 +41,17 @@ export async function sendVerificationEmail(contactId: string) {
     to: contact.email,
     subject: email.subject,
     html: email.subject,
+  });
+
+  await createAuditLog({
+    entityType: AuditEntityType.VERIFICATION_CONTACT,
+    entityId: contact.id,
+    action: "EMAIL_SENT",
+    metadata: {
+      email: contact.email,
+      verificationType: contact.verificationItem.verificationTypeConfig.type,
+    },
+    performedBy: "SYSTEM",
   });
 
   await prisma.verificationContact.update({
