@@ -1,9 +1,11 @@
+import { VerificationStatus } from "../../generated/prisma/enums";
 import { prisma } from "../lib/prisma";
 import {
   applyDiscrepancy,
   deriveCaseStatus,
   deriveItemStatus,
 } from "../utils/verificationStatus";
+import { evaluateAndPersistDiscrepancies } from "./discrepancy.service";
 
 // Recalculate item + case status after a contact responds
 export async function recalculateVerificationStatus(
@@ -31,10 +33,12 @@ export async function recalculateVerificationStatus(
     item.verificationTypeConfigId ? 1 : 1, // todo: wire minContacts later
   );
 
-  // todo: real mismatch detection
-  const hasMismatch = false;
+  let finalItemStatus = baseItemStatus;
 
-  const finalItemStatus = applyDiscrepancy(baseItemStatus, hasMismatch);
+  if (baseItemStatus === VerificationStatus.CLEAR) {
+    const { hasDiscrepancy } = await evaluateAndPersistDiscrepancies(item.id);
+    finalItemStatus = applyDiscrepancy(baseItemStatus, hasDiscrepancy);
+  }
 
   await prisma.verificationItem.update({
     where: { id: item.id },

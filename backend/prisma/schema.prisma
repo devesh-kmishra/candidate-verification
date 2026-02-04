@@ -167,9 +167,10 @@ model VerificationItem {
   createdAt                DateTime           @default(now())
   updatedAt                DateTime           @updatedAt()
 
-  verificationCase       VerificationCase       @relation(fields: [verificationCaseId], references: [id])
-  verificationTypeConfig VerificationTypeConfig @relation(fields: [verificationTypeConfigId], references: [id])
-  contacts               VerificationContact[]
+  verificationCase          VerificationCase          @relation(fields: [verificationCaseId], references: [id])
+  verificationTypeConfig    VerificationTypeConfig    @relation(fields: [verificationTypeConfigId], references: [id])
+  contacts                  VerificationContact[]
+  verificationDiscrepancies VerificationDiscrepancy[]
 
   @@index([verificationCaseId])
   @@index([status])
@@ -211,6 +212,46 @@ model VerificationResponse {
   verificationContact VerificationContact @relation(fields: [verificationContactId], references: [id])
 
   @@index([verificationContactId])
+}
+
+model VerificationDiscrepancy {
+  id                 String            @id @default(uuid())
+  verificationItemId String
+  questionKey        String
+  claimedValue       Json
+  verifiedValue      Json
+  reason             String
+  status             DiscrepancyStatus @default(OPEN)
+  resolvedBy         String?
+  resolutionNote     String?
+  resolvedAt         DateTime?
+  createdAt          DateTime          @default(now())
+
+  verificationItem VerificationItem @relation(fields: [verificationItemId], references: [id])
+
+  @@index([verificationItemId])
+  @@index([status])
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  role      UserRole
+  createdAt DateTime @default(now())
+}
+
+model AuditLog {
+  id              String          @id @default(uuid())
+  entityType      AuditEntityType
+  entityId        String
+  action          String
+  metadata        Json?
+  performedBy     String?
+  performedByRole UserRole?
+  createdAt       DateTime        @default(now())
+
+  @@index([entityType, entityId])
+  @@index([createdAt])
 }
 
 enum VerificationStatus {
@@ -259,4 +300,23 @@ enum VerificationContactSource {
   REFERENCE
   BACKGROUND
   VENDOR
+}
+
+enum DiscrepancyStatus {
+  OPEN
+  ACCEPTED
+  REJECTED
+  OVERRIDDEN
+}
+
+enum UserRole {
+  ADMIN
+  HR
+}
+
+enum AuditEntityType {
+  CANDIDATE
+  VERIFICATION_CASE
+  VERIFICATION_ITEM
+  VERIFICATION_CONTACT
 }
