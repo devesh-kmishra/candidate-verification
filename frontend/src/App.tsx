@@ -1,11 +1,12 @@
 import { Routes, Route } from "react-router-dom";
-import Popup from "./components/Popup";
-import InterviewPage from "./components/InterviewPage";
-import Verification from "./components/Verification";
-import VerificationDashboard from "./components/VerificationDashboard";
-import CandidateVerificationView from "./components/CandidateVerificationView";
-import HomePage from "./components/Home";
+import Popup from "./components/common/Popup";
+import Verification from "./components/verification/VerificationStatus";
+import CandidateVerificationView from "./pages/hr/CandidateVerificationPage";
+import HomePage from "./pages/home/HomePage";
 import AdminDashboard from "./components/dashboard/AdminDashboard";
+import InterviewPage from "./pages/hr/InterviewPage";
+import VerificationDashboard from "./pages/hr/HrDashboardPage"
+
 
 const App = () => {
   return (

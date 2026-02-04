@@ -1,8 +1,8 @@
 import { Search, Filter, Download, Eye } from "lucide-react";
 import { useEffect, useState } from "react";
-import { fetchCandidateQueue } from "../api/candidates";
-import type { Candidate } from "../types/candidates";
-import { timeAgo } from "../utils/time";
+import { fetchCandidateQueue } from "../../api/candidates";
+import type { Candidate } from "../../types/candidates";
+import { timeAgo } from "../../utils/time";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 

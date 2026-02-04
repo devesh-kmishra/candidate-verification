@@ -92,7 +92,7 @@ const CandidateVerificationView = () => {
             <div className="absolute -left-3 top-2 h-8 w-1 rounded-full bg-orange-500/60 blur-sm" />
 
             <h1 className="text-2xl font-semibold tracking-tight text-white">
-              Candidate Verification View
+              HR Verification View
             </h1>
 
             <p className="mt-1 max-w-xl text-sm leading-relaxed text-white/55">
