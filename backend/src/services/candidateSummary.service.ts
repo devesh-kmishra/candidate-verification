@@ -4,6 +4,7 @@ import { getRiskLevel } from "./riskScore.service";
 
 export async function createCandidateSummary(candidateId: string) {
   const candidate = await prisma.candidate.findUnique({
+    // todo: add { organizationId: req.user.organizationId } later
     where: { id: candidateId },
     include: {
       verificationCases: {
