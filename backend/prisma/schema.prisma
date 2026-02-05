@@ -9,6 +9,7 @@ datasource db {
 
 model Candidate {
   id                 String    @id @default(uuid())
+  organizationId     String
   name               String
   email              String    @unique
   phone              String?
@@ -18,7 +19,7 @@ model Candidate {
   resumeUploadedAt   DateTime?
   createdAt          DateTime  @default(now())
 
-  employments       EmploymentVerification[]
+  organization      Organization       @relation(fields: [organizationId], references: [id])
   notes             CandidateNote[]
   verificationCases VerificationCase[]
 
@@ -56,7 +57,6 @@ model EmploymentVerification {
   createdAt            DateTime           @default(now())
   updatedAt            DateTime           @updatedAt()
 
-  candidate   Candidate                @relation(fields: [candidateId], references: [id])
   response    EmpVerificationResponse?
   callingLogs CallingLog[]
 
@@ -102,6 +102,7 @@ model VerificationConfig {
   version        Int
   createdAt      DateTime @default(now())
 
+  organization      Organization             @relation(fields: [organizationId], references: [id])
   verificationTypes VerificationTypeConfig[]
   verificationCases VerificationCase[]
 }
@@ -234,10 +235,13 @@ model VerificationDiscrepancy {
 }
 
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  role      UserRole
-  createdAt DateTime @default(now())
+  id             String   @id @default(uuid())
+  organizationId String
+  email          String   @unique
+  role           UserRole
+  createdAt      DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id])
 }
 
 model AuditLog {
@@ -252,6 +256,18 @@ model AuditLog {
 
   @@index([entityType, entityId])
   @@index([createdAt])
+}
+
+model Organization {
+  id        String   @id @default(uuid())
+  name      String
+  domain    String?  @unique
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  users               User[]
+  verificationConfigs VerificationConfig[]
+  candidates          Candidate[]
 }
 
 enum VerificationStatus {
@@ -315,6 +331,8 @@ enum UserRole {
 }
 
 enum AuditEntityType {
+  ORGANIZATION
+  USER
   CANDIDATE
   VERIFICATION_CASE
   VERIFICATION_ITEM

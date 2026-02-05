@@ -8,6 +8,7 @@ import verificationRoutes from "./routes/verification.routes";
 import candidateFormRoutes from "./routes/candidateForm.routes";
 import discrepancyRoutes from "./routes/discrepancy.routes";
 import diffRoutes from "./routes/diff.routes";
+import organizationRoutes from "./routes/organization.routes";
 import { mockAuth } from "./middlewares/auth.middleware";
 
 const app = express();
@@ -26,5 +27,6 @@ app.use("/api", verificationRoutes);
 app.use("/api", candidateFormRoutes);
 app.use("/api", discrepancyRoutes);
 app.use("/api", diffRoutes);
+app.use("/api", organizationRoutes);
 
 export default app;
