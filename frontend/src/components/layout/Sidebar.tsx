@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { NavLink } from "react-router-dom";
 import {
   LayoutGrid,
   Users,
@@ -58,29 +59,41 @@ const Sidebar = () => {
   const Item = ({
     icon,
     label,
-    active,
+    to,
   }: {
     icon?: React.ReactNode;
     label: string;
-    active?: boolean;
+    to: string;
   }) => (
-    <div
-      className={`group flex items-center gap-3 rounded-md px-6 py-2.5 cursor-pointer transition
-        ${
-          active
-            ? "bg-orange-500/15 text-white"
-            : "text-white/70 hover:bg-white/5"
-        }`}
+    <NavLink
+      to={to}
+      className={({ isActive }) =>
+        `group flex items-center gap-3 rounded-md px-6 py-2.5 cursor-pointer transition
+      ${
+        isActive
+          ? "bg-orange-500/15 text-white"
+          : "text-white/70 hover:bg-white/5"
+      }`
+      }
     >
-      {icon && (
-        <span
-          className={`flex h-5 w-5 items-center justify-center transition ${active ? "text-orange-400" : "text-white/50 group-hover:text-white/80"}`}
-        >
-          {icon}
-        </span>
-      )}
-      <span className="text-sm">{label}</span>
-    </div>
+     {({ isActive }) => (
+      <>
+        {icon && (
+          <span
+            className={`flex h-5 w-5 items-center justify-center transition
+            ${
+              isActive
+                ? "text-orange-400"
+                : "text-white/50 group-hover:text-white/80"
+            }`}
+          >
+            {icon}
+          </span>
+        )}
+        <span className="text-sm">{label}</span>
+      </>
+    )}
+    </NavLink>
   );
 
   /* ---------------- DROPDOWN ---------------- */
@@ -128,38 +141,46 @@ const Sidebar = () => {
   );
 
   /* ---------------- DROPDOWN ITEM ---------------- */
-  const DropdownItem = ({
-    icon,
-    label,
-    active,
-  }: {
-    icon?: React.ReactNode;
-    label: string;
-    active?: boolean;
-  }) => (
-    <div
-      className={`group flex items-center gap-3 rounded-md px-1 py-2 text-sm cursor-pointer transition
+ const DropdownItem = ({
+  icon,
+  label,
+  to,
+}: {
+  icon?: React.ReactNode;
+  label: string;
+  to: string;
+}) => (
+  <NavLink
+    to={to}
+    className={({ isActive }) =>
+      `group flex items-center gap-3 rounded-md px-1 py-2 text-sm cursor-pointer transition
       ${
-        active
+        isActive
           ? "bg-orange-500/10 text-white"
           : "text-white/60 hover:bg-white/5"
-      }`}
-    >
-      {icon && (
-        <span
-          className={`flex h-5 w-5 items-center justify-center transition
-          ${
-            active
-              ? "text-orange-400"
-              : "text-white/40 group-hover:text-white/80"
-          }`}
-        >
-          {icon}
-        </span>
-      )}
-      <span>{label}</span>
-    </div>
-  );
+      }`
+    }
+  >
+    {({ isActive }) => (
+      <>
+        {icon && (
+          <span
+            className={`flex h-5 w-5 items-center justify-center transition
+            ${
+              isActive
+                ? "text-orange-400"
+                : "text-white/40 group-hover:text-white/80"
+            }`}
+          >
+            {icon}
+          </span>
+        )}
+        <span>{label}</span>
+      </>
+    )}
+  </NavLink>
+);
+
 
   return (
     <aside className="flex h-screen w-64 flex-col bg-linear-to-b from-[#0B0F1A] to-[#070B14] text-white">
@@ -217,13 +238,14 @@ const Sidebar = () => {
           <Item
             icon={<LayoutGrid className="width-20px height-18px" />}
             label="Dashboard"
+            to="/dashboard"
           />
         </Section>
 
         <Section title="People">
-          <Item icon={<Users />} label="Employees" />
-          <Item icon={<MessageSquare />} label="Interviews" />
-          <Item icon={<UserPlus />} label="Onboarding" />
+          <Item icon={<Users />} label="Employees" to="/employees" />
+          <Item icon={<MessageSquare />} label="Interviews" to="/interviews" />
+          <Item icon={<UserPlus />} label="Onboarding" to="/onboarding" />
         </Section>
 
         <Section title="Recruitment">
@@ -232,20 +254,20 @@ const Sidebar = () => {
             open={openRecruitment}
             onToggle={() => setOpenRecruitment(!openRecruitment)}
           >
-            <DropdownItem icon={<LayoutGrid />} label="Bulk Hiring Dashboard" />
-            <DropdownItem icon={<ClipboardList />} label="Hiring Drives" />
-            <DropdownItem icon={<Users2 />} label="Candidate Pool" />
-            <DropdownItem icon={<Workflow />} label="Client Workflows" />
-            <DropdownItem icon={<UserCheck />} label="Joining Tracker" />
-            <DropdownItem icon={<UserMinus />} label="Dropout Management" />
-            <DropdownItem icon={<RefreshCcw />} label="Backfill Queue" />
-            <DropdownItem icon={<Shield />} label="Compliance Rules" />
-            <DropdownItem icon={<MapPin />} label="Deployed Workforce" />
-            <DropdownItem icon={<CalendarCheck />} label="Attendance Upload" />
-            <DropdownItem icon={<IndianRupee />} label="Payroll Readiness" />
-            <DropdownItem icon={<BarChart3 />} label="Recruiter Performance" />
-            <DropdownItem icon={<FileText />} label="Daily MIS" />
-            <DropdownItem icon={<Download />} label="Report Export" />
+            <DropdownItem icon={<LayoutGrid />} label="Bulk Hiring Dashboard" to="/bulk-hiring-dashboard" />
+            <DropdownItem icon={<ClipboardList />} label="Hiring Drives" to="/hiring-drives" />
+            <DropdownItem icon={<Users2 />} label="Candidate Pool" to="/candidate-pool" />
+            <DropdownItem icon={<Workflow />} label="Client Workflows" to="/client-workflows" />
+            <DropdownItem icon={<UserCheck />} label="Joining Tracker" to="/joining-tracker" />
+            <DropdownItem icon={<UserMinus />} label="Dropout Management" to="/dropout-management" />
+            <DropdownItem icon={<RefreshCcw />} label="Backfill Queue" to="/backfill-queue" />
+            <DropdownItem icon={<Shield />} label="Compliance Rules" to="/compliance-rules"/>
+            <DropdownItem icon={<MapPin />} label="Deployed Workforce" to="/deployed-workforce" />
+            <DropdownItem icon={<CalendarCheck />} label="Attendance Upload" to="/attendance-upload" />
+            <DropdownItem icon={<IndianRupee />} label="Payroll Readiness" to="/payroll-readiness" />
+            <DropdownItem icon={<BarChart3 />} label="Recruiter Performance" to="/recruiter-performance" />
+            <DropdownItem icon={<FileText />} label="Daily MIS" to="/daily-mis" />
+            <DropdownItem icon={<Download />} label="Report Export" to="/report-export" />
           </Dropdown>
         </Section>
 
@@ -255,33 +277,33 @@ const Sidebar = () => {
             open={openATS}
             onToggle={() => setOpenATS(!openATS)}
           >
-            <DropdownItem icon={<Database />} label="Candidate Database" />
-            <DropdownItem icon={<Upload />} label="Bulk Data Upload" />
-            <DropdownItem icon={<Search />} label="Parsing Import Status" />
-            <DropdownItem icon={<Search />} label="Candidate Search" />
-            <DropdownItem icon={<User />} label="Candidate Profile" />
-            <DropdownItem icon={<Link />} label="Job Candidates Sync" />
+            <DropdownItem icon={<Database />} label="Candidate Database" to="/candidate-database" />
+            <DropdownItem icon={<Upload />} label="Bulk Data Upload" to="/bulk-data-upload" />
+            <DropdownItem icon={<Search />} label="Parsing Import Status" to="/parsing-import-status" />
+            <DropdownItem icon={<Search />} label="Candidate Search" to="/candidate-search" />
+            <DropdownItem icon={<User />} label="Candidate Profile" to="/verification/candidate-profile/${candidateId}" />
+            <DropdownItem icon={<Link />} label="Job Candidates Sync" to="/job-candidates-sync" />
           </Dropdown>
         </Section>
 
         <Section title="Verification">
-          <Item icon={<ShieldCheck />} label="Verification Dashboard" active />
-          <Item icon={<UserCheck />} label="Candidate Verification View" />
+          <Item icon={<ShieldCheck />} label="Verification Dashboard" to="/verification" />
+          {/* <Item icon={<UserCheck />} label="Candidate Verification View" to="/verification/candidate-verification" /> */}
         </Section>
 
         <Section title="Jobs">
-          <Item icon={<Briefcase />} label="Jobs" />
+          <Item icon={<Briefcase />} label="Jobs" to="/jobs"/>
         </Section>
 
         <Section title="Communication">
-          <Item icon={<MessageSquare />} label="Whatsapp Agent" />
-          <Item icon={<Phone />} label="Calling agent" />
+          <Item icon={<MessageSquare />} label="Whatsapp Agent" to="/whatsapp-agent"/>
+          <Item icon={<Phone />} label="Calling agent" to="/calling-agent" />
         </Section>
 
         <Section title="Accounts & billing">
-          <Item icon={<DollarSign />} label="Plans" />
-          <Item icon={<Settings />} label="Settings" />
-          <Item icon={<BadgeAlert />} label="Career" />
+          <Item icon={<DollarSign />} label="Plans" to="/plans"/>
+          <Item icon={<Settings />} label="Settings" to="/settings" />
+          <Item icon={<BadgeAlert />} label="Career" to="/career" />
         </Section>
       </nav>
 

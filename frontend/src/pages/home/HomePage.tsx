@@ -67,7 +67,7 @@ const HomePage = () => {
           <motion.button
             whileHover={{ y: -6 }}
             whileTap={{ scale: 0.98 }}
-            onClick={() => navigate("/admin/dashboard")}
+            onClick={() => navigate("/admin")}
             className="group relative rounded-2xl border border-white/10 bg-gradient-to-br from-[#0E1322] to-[#090D18] p-8 text-left shadow-[0_20px_60px_rgba(0,0,0,0.45)] transition"
           >
             {/* glow */}
