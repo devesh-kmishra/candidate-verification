@@ -1,5 +1,5 @@
 import { Outlet } from "react-router-dom";
-import Sidebar from "../layout/Sidebar";
+import Sidebar from "../layout/HrSidebar";
 
 const Verification = () => {
   return (

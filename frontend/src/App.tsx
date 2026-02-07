@@ -8,8 +8,9 @@ import VerificationDashboard from "./pages/hr/HrDashboardPage";
 import CandidateProfile from "./pages/candidate/CandidateProfile";
 import AdminLayout from "./components/layout/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
-import AdminSettings from "./pages/admin/AdminSettings";
 import AdminUser from "./pages/admin/AdminUser";
+import CandidateDatabase from "./pages/candidate/CandidateDatabase";
+import VerificationSettings from "./pages/admin/VerificationSettings";
 
 const App = () => {
   return (
@@ -21,7 +22,7 @@ const App = () => {
 
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<AdminDashboard />} />
-          <Route path="settings" element={<AdminSettings />} />
+          <Route path="verification-settings" element={<VerificationSettings />} />
           <Route path="users" element={<AdminUser />} />
           <Route path="candidates" element={<CandidateProfile />} />
         </Route>
@@ -36,10 +37,8 @@ const App = () => {
             path="candidate-verification/:candidateId"
             element={<CandidateVerificationView />}
           />
-          <Route
-            path="candidate-profile/:candidateId"
-            element={<CandidateProfile />}
-          />
+          <Route path="candidate-profile/" element={<CandidateProfile />} />
+          <Route path="candidate-database" element={<CandidateDatabase />} />
         </Route>
       </Routes>
     </div>

@@ -1,7 +1,7 @@
 import { ShieldCheck, Clock, CheckCircle2, XCircle } from "lucide-react";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
-import VerificationQueue from "../../components/dashboard/VerificationQueue";
+import VerificationQueue from "../../components/verification/VerificationQueue";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL as string;
 

@@ -21,8 +21,8 @@ const AdminSidebar = () => {
           Candidates
         </NavLink>
 
-        <NavLink to="/admin/settings" className={linkClass}>
-          Settings
+        <NavLink to="/admin/verification-settings" className={linkClass}>
+          Verification Settings
         </NavLink>
       </nav>
     </aside>
