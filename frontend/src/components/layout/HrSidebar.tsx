@@ -277,11 +277,11 @@ const Sidebar = () => {
             open={openATS}
             onToggle={() => setOpenATS(!openATS)}
           >
-            <DropdownItem icon={<Database />} label="Candidate Database" to="/candidate-database" />
+            <DropdownItem icon={<Database />} label="Candidate Database" to="/verification/candidate-database" />
             <DropdownItem icon={<Upload />} label="Bulk Data Upload" to="/bulk-data-upload" />
             <DropdownItem icon={<Search />} label="Parsing Import Status" to="/parsing-import-status" />
             <DropdownItem icon={<Search />} label="Candidate Search" to="/candidate-search" />
-            <DropdownItem icon={<User />} label="Candidate Profile" to="/verification/candidate-profile/${candidateId}" />
+            <DropdownItem icon={<User />} label="Candidate Profile" to="/verification/candidate-profile" />
             <DropdownItem icon={<Link />} label="Job Candidates Sync" to="/job-candidates-sync" />
           </Dropdown>
         </Section>
