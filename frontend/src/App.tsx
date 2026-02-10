@@ -31,6 +31,7 @@ const App = () => {
         <Route path="/interview" element={<InterviewPage />} />
 
         {/* VERIFICATION LAYOUT */}
+        
         <Route path="/verification" element={<Verification />}>
           <Route index element={<VerificationDashboard />} />
           <Route
