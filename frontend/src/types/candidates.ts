@@ -1,11 +1,12 @@
 export type VerificationStatus =
   | "pending"
-  | "in_completed"
+  | "completed"
   | "clear"
   | "discrepancy"
   | "failed";
 
 export interface Candidate {
+  c: any;
   id: string;
   name: string;
   email: string;

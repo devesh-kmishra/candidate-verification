@@ -64,7 +64,11 @@ export default function VerificationQueue() {
           };
 
           data.results.forEach((c) => {
-            statusCount[c.verificationStatus]++;
+            if (c.verificationStatus in statusCount) {
+              statusCount[
+                c.verificationStatus as "pending" | "completed" | "failed"
+              ]++;
+            }
           });
 
           setCounts(statusCount);
@@ -220,14 +224,16 @@ export default function VerificationQueue() {
                     <div className="h-2 w-24 rounded-full bg-white/10">
                       <div
                         className={`h-2 rounded-full transition-all duration-300
-    ${statusProgressColorMap[c.verificationStatus]}
+    ${statusProgressColorMap[c.verificationStatus as "completed" | "pending" | "failed"]}
   `}
                         style={{ width: `${progressPercent}%` }}
                       />
                     </div>
                   </td>
 
-                  <td className="px-4 py-3 font-medium">{c.tatDays ?? "--"}d</td>
+                  <td className="px-4 py-3 font-medium">
+                    {c.tatDays ?? "--"}d
+                  </td>
 
                   <td className="px-4 py-3 text-white/60">
                     {c.lastUpdated ? timeAgo(c.lastUpdated) : "--"}
