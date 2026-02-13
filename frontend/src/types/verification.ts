@@ -59,6 +59,13 @@ export type VerificationQuestionTempletDTO = {
   createdAt: string;
 };
 
+export type Question = {
+  id: string;
+  label: string;
+  type: QuestionType;
+  options?: string[]; // only used when type is mcq
+}
+
 export type QuestionType = "TEXT" | "YES_NO" | "MCQ" | "DATE_RANGE" | "FILE";
 
 export type VerificationCaseDTO = {
