@@ -1,41 +1,35 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import {
-  ShieldCheck,
-  Plus,
-  Trash2,
-} from "lucide-react";
+import { ShieldCheck, Plus, Trash2, Pencil } from "lucide-react";
+import QuestionBuilderModal from "../../components/verification-settings/QuestionBuilder";
+import type {
+  Question,
+} from "../../types/verification";
 
-/* ---------------- MOCK DATA ---------------- */
+/* ---------------- LOCAL UI TYPE ---------------- */
 
-type QuestionType = "text" | "yesno" | "mcq" | "date";
-
-interface Question {
-  id: string;
-  label: string;
-  type: QuestionType;
-}
-
-interface VerificationType {
+interface VerificationUIType {
   id: string;
   name: string;
   enabled: boolean;
   requiredCount: number;
   mandatory: boolean;
-  mode: "sequential" | "parallel";
+  mode: "PARALLEL" | "SEQUENTIAL";
   questions: Question[];
 }
 
-const initialVerifications: VerificationType[] = [
+/* ---------------- MOCK DATA ---------------- */
+
+const initialVerifications: VerificationUIType[] = [
   {
     id: "background",
     name: "Background Verification",
     enabled: true,
     requiredCount: 1,
     mandatory: true,
-    mode: "parallel",
+    mode: "PARALLEL",
     questions: [
-      { id: "q1", label: "Any criminal record?", type: "yesno" },
+      { id: "q1", label: "Any criminal record?", type: "YES_NO" },
     ],
   },
   {
@@ -44,21 +38,10 @@ const initialVerifications: VerificationType[] = [
     enabled: true,
     requiredCount: 2,
     mandatory: true,
-    mode: "sequential",
+    mode: "SEQUENTIAL",
     questions: [
-      { id: "q2", label: "Confirm designation", type: "text" },
-      { id: "q3", label: "Reason for exit", type: "text" },
-    ],
-  },
-  {
-    id: "reference",
-    name: "Reference Check",
-    enabled: false,
-    requiredCount: 2,
-    mandatory: false,
-    mode: "parallel",
-    questions: [
-      { id: "q4", label: "Would you rehire this candidate?", type: "yesno" },
+      { id: "q2", label: "Confirm designation", type: "TEXT" },
+      { id: "q3", label: "Reason for exit", type: "TEXT" },
     ],
   },
 ];
@@ -67,7 +50,17 @@ const initialVerifications: VerificationType[] = [
 
 const VerificationSettingsPage = () => {
   const [verifications, setVerifications] =
-    useState<VerificationType[]>(initialVerifications);
+    useState<VerificationUIType[]>(initialVerifications);
+
+  const [selectedQuestion, setSelectedQuestion] =
+    useState<Question | null>(null);
+
+  const [activeVerificationId, setActiveVerificationId] =
+    useState<string | null>(null);
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  /* ---------------- TOGGLE ---------------- */
 
   const toggleVerification = (id: string) => {
     setVerifications((prev) =>
@@ -77,10 +70,12 @@ const VerificationSettingsPage = () => {
     );
   };
 
-  const updateField = (
+  /* ---------------- UPDATE FIELD ---------------- */
+
+  const updateField = <K extends keyof VerificationUIType>(
     id: string,
-    field: keyof VerificationType,
-    value: any
+    field: K,
+    value: VerificationUIType[K]
   ) => {
     setVerifications((prev) =>
       prev.map((v) =>
@@ -89,180 +84,241 @@ const VerificationSettingsPage = () => {
     );
   };
 
-  const addQuestion = (id: string) => {
+  /* ---------------- ADD QUESTION ---------------- */
+
+  const addQuestion = (verificationId: string) => {
+    const newQuestion: Question = {
+      id: crypto.randomUUID(),
+      label: "New Question",
+      type: "TEXT",
+    };
+
     setVerifications((prev) =>
       prev.map((v) =>
-        v.id === id
+        v.id === verificationId
           ? {
               ...v,
-              questions: [
-                ...v.questions,
-                {
-                  id: crypto.randomUUID(),
-                  label: "New Question",
-                  type: "text",
-                },
-              ],
+              questions: [...v.questions, newQuestion],
             }
           : v
       )
     );
   };
 
-  const removeQuestion = (vid: string, qid: string) => {
+  /* ---------------- REMOVE QUESTION ---------------- */
+
+  const removeQuestion = (
+    verificationId: string,
+    questionId: string
+  ) => {
     setVerifications((prev) =>
       prev.map((v) =>
-        v.id === vid
+        v.id === verificationId
           ? {
               ...v,
-              questions: v.questions.filter((q) => q.id !== qid),
+              questions: v.questions.filter(
+                (q) => q.id !== questionId
+              ),
             }
           : v
       )
     );
   };
+
+  /* ---------------- OPEN EDIT MODAL ---------------- */
+
+  const openEditModal = (
+    verificationId: string,
+    question: Question
+  ) => {
+    setActiveVerificationId(verificationId);
+    setSelectedQuestion(question);
+    setIsModalOpen(true);
+  };
+
+  /* ---------------- SAVE QUESTION ---------------- */
+
+  const handleSaveQuestion = (updated: Question) => {
+    if (!activeVerificationId) return;
+
+    setVerifications((prev) =>
+      prev.map((v) =>
+        v.id === activeVerificationId
+          ? {
+              ...v,
+              questions: v.questions.map((q) =>
+                q.id === updated.id ? updated : q
+              ),
+            }
+          : v
+      )
+    );
+  };
+
+  /* ---------------- RENDER ---------------- */
 
   return (
-    <div className="p-8 space-y-8 max-w-6xl mx-auto">
-      {/* HEADER */}
-      <div>
-        <h1 className="text-2xl font-semibold text-white">
-          Verification Settings
-        </h1>
-        <p className="text-sm text-white/50 mt-1">
-          Configure verification rules & reusable question templates
-        </p>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-[#0F172A] to-[#0B1020] p-6 md:p-10">
+      <div className="max-w-6xl mx-auto space-y-10">
+        {/* HEADER */}
+        <div>
+          <h1 className="text-3xl font-semibold text-white">
+            Verification Settings
+          </h1>
+          <p className="text-sm text-white/50 mt-2">
+            Configure rules and question templates for each verification type
+          </p>
+        </div>
 
-      {/* VERIFICATION TYPES */}
-      <div className="space-y-6">
-        {verifications.map((v) => (
-          <motion.div
-            key={v.id}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="rounded-2xl border border-white/10 bg-[#0B1020] p-6"
-          >
-            {/* TOP ROW */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <ShieldCheck className="text-orange-400 h-5 w-5" />
-                <h3 className="text-lg font-medium text-white">
-                  {v.name}
-                </h3>
-              </div>
+        {/* CARDS */}
+        <div className="grid md:grid-cols-2 gap-6">
+          {verifications.map((v) => (
+            <motion.div
+              key={v.id}
+              whileHover={{ scale: 1.01 }}
+              className={`rounded-2xl border backdrop-blur-lg p-6 transition
+              ${
+                v.enabled
+                  ? "border-white/10 bg-white/5"
+                  : "border-white/5 bg-white/5 opacity-60"
+              }`}
+            >
+              {/* HEADER */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <ShieldCheck className="text-orange-400 h-5 w-5" />
+                  <h3 className="text-lg font-medium text-white">
+                    {v.name}
+                  </h3>
+                </div>
 
-              <button
-                onClick={() => toggleVerification(v.id)}
-                className={`px-4 py-1.5 rounded-full text-xs font-semibold transition
+                <button
+                  onClick={() => toggleVerification(v.id)}
+                  className={`px-4 py-1.5 rounded-full text-xs font-semibold transition
                   ${
                     v.enabled
                       ? "bg-green-500/15 text-green-400"
-                      : "bg-white/10 text-white/50"
+                      : "bg-white/10 text-white/40"
                   }`}
-              >
-                {v.enabled ? "Enabled" : "Disabled"}
-              </button>
-            </div>
-
-            {/* RULES */}
-            {v.enabled && (
-              <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-                {/* COUNT */}
-                <div>
-                  <label className="text-xs text-white/50">
-                    Required Contacts
-                  </label>
-                  <input
-                    type="number"
-                    min={1}
-                    value={v.requiredCount}
-                    onChange={(e) =>
-                      updateField(v.id, "requiredCount", +e.target.value)
-                    }
-                    className="mt-1 w-full rounded-md bg-white/5 border border-white/10 px-3 py-2 text-sm text-white"
-                  />
-                </div>
-
-                {/* MANDATORY */}
-                <div>
-                  <label className="text-xs text-white/50">
-                    Requirement
-                  </label>
-                  <select
-                    value={v.mandatory ? "mandatory" : "optional"}
-                    onChange={(e) =>
-                      updateField(
-                        v.id,
-                        "mandatory",
-                        e.target.value === "mandatory"
-                      )
-                    }
-                    className="mt-1 w-full rounded-md bg-white/5 border border-white/10 px-3 py-2 text-sm text-white"
-                  >
-                    <option value="mandatory">Mandatory</option>
-                    <option value="optional">Optional</option>
-                  </select>
-                </div>
-
-                {/* MODE */}
-                <div>
-                  <label className="text-xs text-white/50">
-                    Execution Mode
-                  </label>
-                  <select
-                    value={v.mode}
-                    onChange={(e) =>
-                      updateField(v.id, "mode", e.target.value)
-                    }
-                    className="mt-1 w-full rounded-md bg-white/5 border border-white/10 px-3 py-2 text-sm text-white"
-                  >
-                    <option value="parallel">Parallel</option>
-                    <option value="sequential">Sequential</option>
-                  </select>
-                </div>
+                >
+                  {v.enabled ? "Enabled" : "Disabled"}
+                </button>
               </div>
-            )}
 
-            {/* QUESTIONS */}
-            {v.enabled && (
-              <div className="mt-6">
-                <div className="flex items-center justify-between mb-3">
-                  <p className="text-sm text-white/70">
-                    Custom Questions
-                  </p>
-                  <button
-                    onClick={() => addQuestion(v.id)}
-                    className="flex items-center gap-1 text-xs text-orange-400 hover:underline"
-                  >
-                    <Plus className="h-3 w-3" />
-                    Add Question
-                  </button>
-                </div>
+              {/* RULES */}
+              {v.enabled && (
+                <div className="mt-6 space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <input
+                      type="number"
+                      min={1}
+                      value={v.requiredCount}
+                      onChange={(e) =>
+                        updateField(
+                          v.id,
+                          "requiredCount",
+                          Math.max(1, Number(e.target.value))
+                        )
+                      }
+                      className="bg-white/5 border border-white/10 rounded-md px-3 py-2 text-sm text-white"
+                    />
 
-                <div className="space-y-2">
-                  {v.questions.map((q) => (
-                    <div
-                      key={q.id}
-                      className="flex items-center justify-between rounded-md bg-white/5 px-3 py-2"
+                    <select
+                      value={v.mandatory ? "mandatory" : "optional"}
+                      onChange={(e) =>
+                        updateField(
+                          v.id,
+                          "mandatory",
+                          e.target.value === "mandatory"
+                        )
+                      }
+                      className="bg-white/5 border border-white/10 rounded-md px-3 py-2 text-sm text-white"
                     >
-                      <span className="text-sm text-white">
-                        {q.label}
-                      </span>
+                      <option value="mandatory">Mandatory</option>
+                      <option value="optional">Optional</option>
+                    </select>
+
+                    <select
+                      value={v.mode}
+                      onChange={(e) =>
+                        updateField(
+                          v.id,
+                          "mode",
+                          e.target.value as "PARALLEL" | "SEQUENTIAL"
+                        )
+                      }
+                      className="bg-white/5 border border-white/10 rounded-md px-3 py-2 text-sm text-white"
+                    >
+                      <option value="PARALLEL">Parallel</option>
+                      <option value="SEQUENTIAL">Sequential</option>
+                    </select>
+                  </div>
+
+                  {/* QUESTIONS */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm text-white/70">
+                        Questions
+                      </p>
                       <button
-                        onClick={() => removeQuestion(v.id, q.id)}
-                        className="text-white/40 hover:text-red-400"
+                        onClick={() => addQuestion(v.id)}
+                        className="flex items-center gap-1 text-xs text-orange-400"
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Plus className="h-3 w-3" />
+                        Add
                       </button>
                     </div>
-                  ))}
+
+                    {v.questions.map((q) => (
+                      <div
+                        key={q.id}
+                        className="flex items-center justify-between bg-white/5 border border-white/10 rounded-lg px-3 py-2 hover:bg-white/10 transition"
+                      >
+                        <div>
+                          <p className="text-sm text-white">
+                            {q.label}
+                          </p>
+                          <span className="text-[10px] text-white/40">
+                            {q.type}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-3">
+                          <button
+                            onClick={() =>
+                              openEditModal(v.id, q)
+                            }
+                            className="text-white/40 hover:text-orange-400"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </button>
+
+                          <button
+                            onClick={() =>
+                              removeQuestion(v.id, q.id)
+                            }
+                            className="text-white/40 hover:text-red-400"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
-          </motion.div>
-        ))}
+              )}
+            </motion.div>
+          ))}
+        </div>
       </div>
+
+      {/* MODAL */}
+      <QuestionBuilderModal
+        isOpen={isModalOpen}
+        question={selectedQuestion}
+        onClose={() => setIsModalOpen(false)}
+        onSave={handleSaveQuestion}
+      />
     </div>
   );
 };
