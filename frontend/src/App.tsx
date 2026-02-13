@@ -11,6 +11,7 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminUser from "./pages/admin/AdminUser";
 import CandidateDatabase from "./pages/candidate/CandidateDatabase";
 import VerificationSettings from "./pages/admin/VerificationSettings";
+import CaseDetailsPage from "./pages/case/CaseDetailsPage";
 
 const App = () => {
   return (
@@ -37,6 +38,10 @@ const App = () => {
           <Route
             path="candidate-verification/:candidateId"
             element={<CandidateVerificationView />}
+          />
+          <Route
+            path="cases/:candidateId"
+            element={<CaseDetailsPage/>}
           />
           <Route path="candidate-profile/" element={<CandidateProfile />} />
           <Route path="candidate-database" element={<CandidateDatabase />} />

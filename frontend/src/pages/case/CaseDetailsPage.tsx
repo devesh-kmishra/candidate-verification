@@ -111,16 +111,12 @@ const ContactModal = ({ isOpen, onClose, onSubmit }: ContactModalProps) => {
 /* -------------------------------------------------- */
 /* MAIN PAGE */
 /* -------------------------------------------------- */
-
 const CaseDetailsPage = () => {
   const { caseId } = useParams<{ caseId: string }>();
 
-  const [caseData, setCaseData] = useState<VerificationCaseDTO | null>(null);
-
+    const [caseData, setCaseData] = useState<VerificationCaseDTO | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeItem, setActiveItem] = useState<VerificationItemDTO | null>(
-    null,
-  );
+  const [activeItem, setActiveItem] = useState<VerificationItemDTO | null>(null);
 
   /* Fetch Case */
 
@@ -156,122 +152,131 @@ const CaseDetailsPage = () => {
       },
     });
 
-    /* Loading State */
+    await fetchCase(); // refresh after adding contact
+  };
 
-    if (loading) {
-      return (
-        <div className="min-h-screen flex items-center justify-center bg-[#0B1020]">
-          <Loader2 className="animate-spin text-white" />
-        </div>
-      );
-    }
+  /* ---------------- LOADING STATE ---------------- */
 
-    if (!caseData) {
-      return <div className="text-white p-10">Case not found.</div>;
-    }
-
-    /* Render */
-
+  if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#0F172A] to-[#0B1020] p-8">
-        <div className="max-w-6xl mx-auto space-y-8">
-          {/* HEADER */}
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-semibold text-white">
-                Verification Case
-              </h1>
-              <p className="text-white/50 text-sm">
-                Candidate ID: {caseData.candidateId}
-              </p>
-            </div>
-
-            <StatusBadge status={caseData.status} />
-          </div>
-
-          {/* ITEMS */}
-          <div className="grid md:grid-cols-2 gap-6">
-            {caseData.items.map((item) => (
-              <div
-                key={item.id}
-                className="bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-lg"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <ShieldCheck className="text-orange-400 w-5 h-5" />
-                    <h3 className="text-white font-medium">
-                      {item.verificationTypeConfigId}
-                    </h3>
-                  </div>
-
-                  <StatusBadge status={item.status} />
-                </div>
-
-                <div className="mt-4 text-sm text-white/60 space-y-1">
-                  <p>
-                    Mode:{" "}
-                    <span className="text-white">{item.executionMode}</span>
-                  </p>
-                  <p>
-                    Mandatory:{" "}
-                    <span className="text-white">
-                      {item.mandatory ? "Yes" : "No"}
-                    </span>
-                  </p>
-                </div>
-
-                {/* CONTACTS */}
-                <div className="mt-5">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2 text-white/70 text-sm">
-                      <Users className="w-4 h-4" />
-                      Contacts
-                    </div>
-
-                    <button
-                      onClick={() => setActiveItem(item)}
-                      className="text-orange-400 text-xs flex items-center gap-1"
-                    >
-                      <Plus className="w-3 h-3" />
-                      Add
-                    </button>
-                  </div>
-
-                  <div className="space-y-2">
-                    {item.contacts.length === 0 && (
-                      <p className="text-xs text-white/40">No contacts added</p>
-                    )}
-
-                    {item.contacts.map((contact) => (
-                      <div
-                        key={contact.id}
-                        className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm"
-                      >
-                        <p className="text-white">{contact.name}</p>
-                        <p className="text-white/40 text-xs">{contact.email}</p>
-                        <p className="text-white/40 text-xs">
-                          Status: {contact.source}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* MODAL */}
-        <ContactModal
-          isOpen={!!activeItem}
-          onClose={() => setActiveItem(null)}
-          onSubmit={async (data) => {
-            if (!activeItem) return;
-            await handleAddContact(activeItem, data);
-          }}
-        />
+      <div className="min-h-screen flex items-center justify-center bg-[#0B1020]">
+        <Loader2 className="animate-spin text-white" />
       </div>
     );
-  };
+  }
+
+  /* ---------------- NOT FOUND ---------------- */
+
+  if (!caseData) {
+    return <div className="text-white p-10">Case not found.</div>;
+  }
+
+  /* ---------------- RENDER ---------------- */
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-[#0F172A] to-[#0B1020] p-8">
+      <div className="max-w-6xl mx-auto space-y-8">
+        {/* HEADER */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold text-white">
+              Verification Case
+            </h1>
+            <p className="text-white/50 text-sm">
+              Candidate ID: {caseData.candidateId}
+            </p>
+          </div>
+
+          <StatusBadge status={caseData.status} />
+        </div>
+
+        {/* ITEMS */}
+        <div className="grid md:grid-cols-2 gap-6">
+          {caseData.items.map((item) => (
+            <div
+              key={item.id}
+              className="bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-lg"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <ShieldCheck className="text-orange-400 w-5 h-5" />
+                  <h3 className="text-white font-medium">
+                    {item.verificationTypeConfigId}
+                  </h3>
+                </div>
+
+                <StatusBadge status={item.status} />
+              </div>
+
+              <div className="mt-4 text-sm text-white/60 space-y-1">
+                <p>
+                  Mode:{" "}
+                  <span className="text-white">{item.executionMode}</span>
+                </p>
+                <p>
+                  Mandatory:{" "}
+                  <span className="text-white">
+                    {item.mandatory ? "Yes" : "No"}
+                  </span>
+                </p>
+              </div>
+
+              {/* CONTACTS */}
+              <div className="mt-5">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2 text-white/70 text-sm">
+                    <Users className="w-4 h-4" />
+                    Contacts
+                  </div>
+
+                  <button
+                    onClick={() => setActiveItem(item)}
+                    className="text-orange-400 text-xs flex items-center gap-1"
+                  >
+                    <Plus className="w-3 h-3" />
+                    Add
+                  </button>
+                </div>
+
+                <div className="space-y-2">
+                  {item.contacts.length === 0 && (
+                    <p className="text-xs text-white/40">
+                      No contacts added
+                    </p>
+                  )}
+
+                  {item.contacts.map((contact) => (
+                    <div
+                      key={contact.id}
+                      className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm"
+                    >
+                      <p className="text-white">{contact.name}</p>
+                      <p className="text-white/40 text-xs">
+                        {contact.email}
+                      </p>
+                      <p className="text-white/40 text-xs">
+                        Status: {contact.source}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* MODAL */}
+      <ContactModal
+        isOpen={!!activeItem}
+        onClose={() => setActiveItem(null)}
+        onSubmit={async (data) => {
+          if (!activeItem) return;
+          await handleAddContact(activeItem, data);
+        }}
+      />
+    </div>
+  );
 };
+
 export default CaseDetailsPage;
