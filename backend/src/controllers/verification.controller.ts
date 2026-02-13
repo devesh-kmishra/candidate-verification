@@ -1,7 +1,9 @@
 import { Request, Response } from "express";
 import { prisma } from "../lib/prisma";
-import { recalculateVerificationStatus } from "../services/verification.service";
-import { Prisma } from "../../generated/prisma/client";
+import {
+  handleContactResponse,
+  recalculateVerificationStatus,
+} from "../services/verification.service";
 import { validateAnswer } from "../utils/prisma";
 
 export const submitVerificationResponse = async (
@@ -60,6 +62,8 @@ export const submitVerificationResponse = async (
   });
 
   await recalculateVerificationStatus(contact.verificationItemId);
+
+  await handleContactResponse(contact.id);
 
   res.json({ message: "Verification submitted successfully" });
 };

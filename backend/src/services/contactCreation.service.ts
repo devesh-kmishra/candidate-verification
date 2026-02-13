@@ -3,9 +3,11 @@ import {
   VerificationStatus,
 } from "../../generated/prisma/enums";
 import { prisma } from "../lib/prisma";
+import { verifierMsgTemplate } from "../templates/verifierMessage";
+import { buildVerificationLink } from "../utils/linkBuilder";
 import { mapVerificationTypeToSource } from "../utils/prisma";
 import { generateVerificationToken } from "../utils/token";
-import { sendVerificationEmail } from "./notification.service";
+import { sendNotification } from "./notification.service";
 
 type SubmittedContact = {
   name: string;
@@ -63,17 +65,24 @@ export async function createContactsFromCandidateForm(
       throw new Error(`Maximum ${maxContacts} contacts allowed`);
     }
 
+    let index = 0;
     for (const contact of section.contacts) {
       contactsToCreate.push({
         verificationItemId: item.id,
         name: contact.name,
         email: contact.email,
         phone: contact.phone,
-        status: VerificationContactStatus.PENDING,
+        status:
+          item.executionMode === "SEQUENTIAL"
+            ? index === 0
+              ? VerificationContactStatus.PENDING
+              : VerificationContactStatus.BLOCKED
+            : VerificationContactStatus.PENDING,
         source: mapVerificationTypeToSource(item.verificationTypeConfig.type),
         token: generateVerificationToken(),
         tokenExpiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
       });
+      index++;
     }
   }
 
@@ -86,11 +95,55 @@ export async function createContactsFromCandidateForm(
       verificationItemId: {
         in: sections.map((s) => s.verificationItemId),
       },
+      status: VerificationContactStatus.PENDING,
     },
   });
 
+  const verificationCase = await prisma.verificationCase.findUnique({
+    where: {
+      id: verificationCaseId,
+    },
+    include: {
+      candidate: true,
+    },
+  });
+
+  if (!verificationCase) {
+    throw new Error("Verification case not found");
+  }
+
+  const organization = await prisma.organization.findUnique({
+    where: {
+      id: verificationCase.candidate.organizationId,
+    },
+  });
+
+  if (!organization) {
+    throw new Error("Organization not found");
+  }
+
+  const candidateName = verificationCase.candidate.name;
+
   for (const contact of createdContacts) {
-    await sendVerificationEmail(contact.id);
+    const verifierLink = buildVerificationLink({
+      type: "VERIFIER",
+      token: contact.token,
+    });
+
+    await sendNotification(["EMAIL", "WHATSAPP"], "VERIFIER", {
+      receiverId: contact.id,
+      organizationName: organization.name,
+      candidateName: candidateName,
+      link: verifierLink,
+      toEmail: contact.email,
+      toPhone: contact.phone ?? undefined,
+      subject: "Employment Verification Request",
+      message: verifierMsgTemplate(
+        organization.name,
+        candidateName,
+        verifierLink,
+      ),
+    });
   }
 
   await prisma.verificationItem.updateMany({

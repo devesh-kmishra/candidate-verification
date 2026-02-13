@@ -17,7 +17,8 @@ type Timeline = {
 type QueueStatus = "all" | "pending" | "completed" | "failed";
 
 export const createCandidate = async (req: Request, res: Response) => {
-  const { name, email, phone, city, joiningDesignation } = req.body;
+  const { organizationId, name, email, phone, city, joiningDesignation } =
+    req.body;
 
   if (!name || !email) {
     return res.status(400).json({
@@ -28,6 +29,7 @@ export const createCandidate = async (req: Request, res: Response) => {
   try {
     const candidate = await prisma.candidate.create({
       data: {
+        organizationId,
         name,
         email,
         phone,
@@ -51,114 +53,114 @@ export const createCandidate = async (req: Request, res: Response) => {
   }
 };
 
-export const getCandidateOverview = async (req: Request, res: Response) => {
-  const candidateId = req.params.candidateId as string;
+// export const getCandidateOverview = async (req: Request, res: Response) => {
+//   const candidateId = req.params.candidateId as string;
 
-  const candidate = await prisma.candidate.findUnique({
-    where: { id: candidateId },
-    include: {
-      employments: {
-        orderBy: { createdAt: "desc" },
-        take: 1,
-      },
-    },
-  });
+//   const candidate = await prisma.candidate.findUnique({
+//     where: { id: candidateId },
+//     include: {
+//       employments: {
+//         orderBy: { createdAt: "desc" },
+//         take: 1,
+//       },
+//     },
+//   });
 
-  if (!candidate) {
-    return res.status(404).json({ message: "Candidate not found" });
-  }
+//   if (!candidate) {
+//     return res.status(404).json({ message: "Candidate not found" });
+//   }
 
-  const latestEmployment = candidate.employments[0];
+//   const latestEmployment = candidate.employments[0];
 
-  const allStatuses = await prisma.employmentVerification.findMany({
-    where: { candidateId },
-    select: { status: true },
-  });
+//   const allStatuses = await prisma.employmentVerification.findMany({
+//     where: { candidateId },
+//     select: { status: true },
+//   });
 
-  const verificationStatus = getOverallStatusFromEmployments(
-    allStatuses.map((e: { status: VerificationStatus }) => e.status),
-  );
+//   const verificationStatus = getOverallStatusFromEmployments(
+//     allStatuses.map((e: { status: VerificationStatus }) => e.status),
+//   );
 
-  res.json({
-    candidateId: candidate.id,
-    name: candidate.name,
-    email: candidate.email,
-    phone: candidate.phone,
-    city: candidate.city,
-    position:
-      candidate.joiningDesignation ?? latestEmployment?.designation ?? "-",
-    verificationStatus,
-  });
-};
+//   res.json({
+//     candidateId: candidate.id,
+//     name: candidate.name,
+//     email: candidate.email,
+//     phone: candidate.phone,
+//     city: candidate.city,
+//     position:
+//       candidate.joiningDesignation ?? latestEmployment?.designation ?? "-",
+//     verificationStatus,
+//   });
+// };
 
-export const getEmploymentTimeline = async (req: Request, res: Response) => {
-  const candidateId = req.params.candidateId as string;
+// export const getEmploymentTimeline = async (req: Request, res: Response) => {
+//   const candidateId = req.params.candidateId as string;
 
-  const employments = await prisma.employmentVerification.findMany({
-    where: { candidateId },
-    include: {
-      response: {
-        include: {
-          documents: true,
-        },
-      },
-      callingLogs: true,
-    },
-  });
+//   const employments = await prisma.employmentVerification.findMany({
+//     where: { candidateId },
+//     include: {
+//       response: {
+//         include: {
+//           documents: true,
+//         },
+//       },
+//       callingLogs: true,
+//     },
+//   });
 
-  const timeline: Timeline[] = [];
+//   const timeline: Timeline[] = [];
 
-  for (const emp of employments) {
-    timeline.push({
-      timestamp: emp.createdAt,
-      type: "EMPLOYMENT_ADDED",
-      employmentId: emp.id,
-      company: emp.previousCompanyName,
-      message: `Employment at ${emp.previousCompanyName} added`,
-    });
+//   for (const emp of employments) {
+//     timeline.push({
+//       timestamp: emp.createdAt,
+//       type: "EMPLOYMENT_ADDED",
+//       employmentId: emp.id,
+//       company: emp.previousCompanyName,
+//       message: `Employment at ${emp.previousCompanyName} added`,
+//     });
 
-    if (emp.response) {
-      timeline.push({
-        timestamp: emp.response.submittedAt,
-        type: "VERIFICATION_SUBMITTED",
-        employmentId: emp.id,
-        company: emp.previousCompanyName,
-        message: "Verification submitted by previous employer",
-      });
+//     if (emp.response) {
+//       timeline.push({
+//         timestamp: emp.response.submittedAt,
+//         type: "VERIFICATION_SUBMITTED",
+//         employmentId: emp.id,
+//         company: emp.previousCompanyName,
+//         message: "Verification submitted by previous employer",
+//       });
 
-      for (const doc of emp.response.documents) {
-        timeline.push({
-          timestamp: doc.uploadedAt,
-          type: "DOCUMENT_UPLOADED",
-          employmentId: emp.id,
-          company: emp.previousCompanyName,
-          documentType: doc.type,
-          fileUrl: doc.fileUrl,
-          message: `${doc.type.replace("_", " ")} uploaded`,
-        });
-      }
-    }
+//       for (const doc of emp.response.documents) {
+//         timeline.push({
+//           timestamp: doc.uploadedAt,
+//           type: "DOCUMENT_UPLOADED",
+//           employmentId: emp.id,
+//           company: emp.previousCompanyName,
+//           documentType: doc.type,
+//           fileUrl: doc.fileUrl,
+//           message: `${doc.type.replace("_", " ")} uploaded`,
+//         });
+//       }
+//     }
 
-    for (const call of emp.callingLogs) {
-      timeline.push({
-        timestamp: call.callTime,
-        type: "CALL_LOGGED",
-        employmentId: emp.id,
-        company: emp.previousCompanyName,
-        message: `Manual HR call logged: ${call.outcome}`,
-      });
-    }
-  }
+//     for (const call of emp.callingLogs) {
+//       timeline.push({
+//         timestamp: call.callTime,
+//         type: "CALL_LOGGED",
+//         employmentId: emp.id,
+//         company: emp.previousCompanyName,
+//         message: `Manual HR call logged: ${call.outcome}`,
+//       });
+//     }
+//   }
 
-  timeline.sort(
-    (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
-  );
+//   timeline.sort(
+//     (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
+//   );
 
-  res.json({
-    candidateId,
-    timeline,
-  });
-};
+//   res.json({
+//     candidateId,
+//     timeline,
+//   });
+// };
 
 export const getCandidateSummary = async (req: Request, res: Response) => {
   const candidateId = req.params.candidateId as string;
@@ -186,125 +188,125 @@ export const addCandidateNote = async (req: Request, res: Response) => {
   res.status(201).json(createdNote);
 };
 
-export const searchCandidates = async (req: Request, res: Response) => {
-  const query = req.query.q as string | undefined;
+// export const searchCandidates = async (req: Request, res: Response) => {
+//   const query = req.query.q as string | undefined;
 
-  if (!query || query.trim().length < 2) {
-    return res.status(400).json({
-      message: "Search query must be at least 2 characters",
-    });
-  }
+//   if (!query || query.trim().length < 2) {
+//     return res.status(400).json({
+//       message: "Search query must be at least 2 characters",
+//     });
+//   }
 
-  const candidates = await prisma.candidate.findMany({
-    where: {
-      OR: [
-        { name: { contains: query, mode: "insensitive" } },
-        { email: { contains: query, mode: "insensitive" } },
-        { phone: { contains: query } },
-      ],
-    },
-    take: 10,
-    include: {
-      employments: {
-        select: { status: true },
-      },
-    },
-  });
+//   const candidates = await prisma.candidate.findMany({
+//     where: {
+//       OR: [
+//         { name: { contains: query, mode: "insensitive" } },
+//         { email: { contains: query, mode: "insensitive" } },
+//         { phone: { contains: query } },
+//       ],
+//     },
+//     take: 10,
+//     include: {
+//       employments: {
+//         select: { status: true },
+//       },
+//     },
+//   });
 
-  const results = candidates.map((candidate) => {
-    const statuses = candidate.employments.map((e) => e.status);
+//   const results = candidates.map((candidate) => {
+//     const statuses = candidate.employments.map((e) => e.status);
 
-    return {
-      id: candidate.id,
-      name: candidate.name,
-      email: candidate.email,
-      phone: candidate.phone,
-      city: candidate.city,
-      joiningDesignation: candidate.joiningDesignation,
-      verificationStatus: getOverallStatusFromEmployments(statuses),
-    };
-  });
+//     return {
+//       id: candidate.id,
+//       name: candidate.name,
+//       email: candidate.email,
+//       phone: candidate.phone,
+//       city: candidate.city,
+//       joiningDesignation: candidate.joiningDesignation,
+//       verificationStatus: getOverallStatusFromEmployments(statuses),
+//     };
+//   });
 
-  res.json({
-    count: results.length,
-    results,
-  });
-};
+//   res.json({
+//     count: results.length,
+//     results,
+//   });
+// };
 
-export const getVerificationQueue = async (req: Request, res: Response) => {
-  const status = (req.query.status as QueueStatus) || "all";
-  const city = req.query.city as string | undefined;
-  const designation = req.query.designation as string | undefined;
-  const q = req.query.q as string | undefined;
+// export const getVerificationQueue = async (req: Request, res: Response) => {
+//   const status = (req.query.status as QueueStatus) || "all";
+//   const city = req.query.city as string | undefined;
+//   const designation = req.query.designation as string | undefined;
+//   const q = req.query.q as string | undefined;
 
-  const candidates = await prisma.candidate.findMany({
-    where: {
-      ...(city && {
-        city: { equals: city, mode: "insensitive" },
-      }),
-      ...(designation && {
-        joiningDesignation: {
-          contains: designation,
-          mode: "insensitive",
-        },
-      }),
-      ...(q && {
-        OR: [
-          { name: { contains: q, mode: "insensitive" } },
-          { email: { contains: q, mode: "insensitive" } },
-          { phone: { contains: q } },
-        ],
-      }),
-    },
-    include: {
-      employments: {
-        select: { status: true, createdAt: true, updatedAt: true },
-      },
-    },
-    orderBy: { createdAt: "desc" },
-  });
+//   const candidates = await prisma.candidate.findMany({
+//     where: {
+//       ...(city && {
+//         city: { equals: city, mode: "insensitive" },
+//       }),
+//       ...(designation && {
+//         joiningDesignation: {
+//           contains: designation,
+//           mode: "insensitive",
+//         },
+//       }),
+//       ...(q && {
+//         OR: [
+//           { name: { contains: q, mode: "insensitive" } },
+//           { email: { contains: q, mode: "insensitive" } },
+//           { phone: { contains: q } },
+//         ],
+//       }),
+//     },
+//     include: {
+//       employments: {
+//         select: { status: true, createdAt: true, updatedAt: true },
+//       },
+//     },
+//     orderBy: { createdAt: "desc" },
+//   });
 
-  const results = candidates
-    .map((candidate) => {
-      const statuses = candidate.employments.map((e) => e.status);
+//   const results = candidates
+//     .map((candidate) => {
+//       const statuses = candidate.employments.map((e) => e.status);
 
-      const queueStatus = deriveQueueStatus(statuses);
-      const riskScore = calculateCandidateRisk(statuses);
-      const progress = calculateProgress(statuses);
+//       const queueStatus = deriveQueueStatus(statuses);
+//       const riskScore = calculateCandidateRisk(statuses);
+//       const progress = calculateProgress(statuses);
 
-      const createdDates = candidate.employments.map((e) => e.createdAt);
-      const tatDays = calculateTAT(createdDates);
+//       const createdDates = candidate.employments.map((e) => e.createdAt);
+//       const tatDays = calculateTAT(createdDates);
 
-      const lastUpdated = candidate.employments.reduce(
-        (latest, e) =>
-          e.updatedAt && e.updatedAt > latest ? e.updatedAt : latest,
-        candidate.createdAt,
-      );
+//       const lastUpdated = candidate.employments.reduce(
+//         (latest, e) =>
+//           e.updatedAt && e.updatedAt > latest ? e.updatedAt : latest,
+//         candidate.createdAt,
+//       );
 
-      return {
-        id: candidate.id,
-        name: candidate.name,
-        email: candidate.email,
-        city: candidate.city,
-        joiningDesignation: candidate.joiningDesignation,
-        verificationStatus: queueStatus,
-        riskScore,
-        progress,
-        tatDays,
-        lastUpdated,
-      };
-    })
-    .filter((candidate) => {
-      if (status === "all") return true;
+//       return {
+//         id: candidate.id,
+//         name: candidate.name,
+//         email: candidate.email,
+//         city: candidate.city,
+//         joiningDesignation: candidate.joiningDesignation,
+//         verificationStatus: queueStatus,
+//         riskScore,
+//         progress,
+//         tatDays,
+//         lastUpdated,
+//       };
+//     })
+//     .filter((candidate) => {
+//       if (status === "all") return true;
 
-      return candidate.verificationStatus === status;
-    });
+//       return candidate.verificationStatus === status;
+//     });
 
-  res.json({
-    count: results.length,
-    results,
-  });
-};
+//   res.json({
+//     count: results.length,
+//     results,
+//   });
+// };
 
 export const uploadCandidateResume = async (req: Request, res: Response) => {
   const candidateId = req.params.candidateId as string;
