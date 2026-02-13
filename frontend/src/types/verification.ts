@@ -64,7 +64,7 @@ export type Question = {
   label: string;
   type: QuestionType;
   options?: string[]; // only used when type is mcq
-}
+};
 
 export type QuestionType = "TEXT" | "YES_NO" | "MCQ" | "DATE_RANGE" | "FILE";
 
@@ -82,6 +82,8 @@ export type VerificationCaseDTO = {
 export type VerificationItemDTO = {
   id: string;
   verificationTypeConfigId: string;
+  verificationType: VerificationType;
+
   status: VerificationStatus;
   mandatory: boolean;
   executionMode: ExecutionMode;
@@ -159,7 +161,7 @@ export type CreateVerificationCasePayload = {
 
 export type AddVerificationContactPayload = {
   verificationCaseId: string;
-  verificationType: VerificationType[];
+  verificationType: VerificationType;
   contacts: {
     name: string;
     email: string;
