@@ -1,19 +1,19 @@
 import { Router } from "express";
 import {
-  createVerification,
+  // createVerification,
   getVerificationForm,
-  submitVerification,
+  // submitVerification,
   addCallingLog,
 } from "../controllers/employment.controller";
-import { verificationUpload } from "../utils/fileUpload";
+// import { verificationUpload } from "../utils/fileUpload";
 
 const router = Router();
 
 router.get("/form/:token", getVerificationForm);
-router.post("/", createVerification);
+// router.post("/", createVerification);
 // todo: uncomment and use later
 // router.post("/submit/:token", verificationUpload, submitVerification);
-router.post("/submit/:token", submitVerification);
+// router.post("/submit/:token", submitVerification);
 router.post("/:id/calling-log", addCallingLog);
 
 export default router;

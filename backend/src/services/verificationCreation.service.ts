@@ -1,5 +1,4 @@
 import crypto from "crypto";
-import axios from "axios";
 import { VerificationStatus } from "../../generated/prisma/enums";
 import { prisma } from "../lib/prisma";
 import { buildVerificationLink } from "../utils/linkBuilder";
@@ -85,20 +84,8 @@ export async function createVerificationCaseFromConfig(
 
     return verificationCase;
   } catch (err: any) {
-    if (axios.isAxiosError(err)) {
-      console.error("WHATSAPP AXIOS ERROR STATUS:", err.response?.status);
-      console.error("WHATSAPP AXIOS ERROR DATA:", err.response?.data);
+    console.error(err.response?.data);
 
-      throw {
-        statusCode: err.response?.status || 500,
-        message: err.response?.data?.error?.message || "WhatsApp API error",
-        details: err.response?.data,
-      };
-    }
-
-    throw {
-      statusCode: 500,
-      message: err.message || "Verification start failed",
-    };
+    throw err;
   }
 }
