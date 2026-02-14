@@ -1,19 +1,35 @@
-import { Request, Response } from "express";
+import { Request, Response, NextFunction } from "express";
 import {
   createVerificationConfig,
   getActiveVerificationConfig,
 } from "../services/verificationConfig.service";
 
-export const createConfigHandler = async (req: Request, res: Response) => {
-  const config = await createVerificationConfig(req.body);
+export const createConfigHandler = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const config = await createVerificationConfig(req.body);
 
-  res.status(201).json(config);
+    res.status(201).json(config);
+  } catch (err) {
+    next(err);
+  }
 };
 
-export const getActiveConfigHandler = async (req: Request, res: Response) => {
-  const organizationId = req.params.organizationId as string;
+export const getActiveConfigHandler = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const organizationId = req.params.organizationId as string;
 
-  const config = await getActiveVerificationConfig(organizationId);
+    const config = await getActiveVerificationConfig(organizationId);
 
-  res.json(config);
+    res.json(config);
+  } catch (err) {
+    next(err);
+  }
 };

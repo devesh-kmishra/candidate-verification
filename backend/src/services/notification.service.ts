@@ -37,15 +37,27 @@ export async function sendNotification(
       html: payload.message!,
     });
 
-    await createAuditLog({
-      entityType: AuditEntityType.VERIFICATION_CONTACT,
-      entityId: payload.receiverId,
-      action: "EMAIL_SENT",
-      metadata: {
-        email: payload.toEmail,
-      },
-      performedBy: "SYSTEM",
-    });
+    if (receiver === "CANDIDATE") {
+      await createAuditLog({
+        entityType: AuditEntityType.CANDIDATE,
+        entityId: payload.receiverId,
+        action: "EMAIL_SENT",
+        metadata: {
+          email: payload.toEmail,
+        },
+        performedBy: "SYSTEM",
+      });
+    } else if (receiver === "VERIFIER") {
+      await createAuditLog({
+        entityType: AuditEntityType.VERIFICATION_CONTACT,
+        entityId: payload.receiverId,
+        action: "EMAIL_SENT",
+        metadata: {
+          email: payload.toEmail,
+        },
+        performedBy: "SYSTEM",
+      });
+    }
   }
 
   if (channels.includes("WHATSAPP") && payload.toPhone) {
@@ -56,6 +68,16 @@ export async function sendNotification(
         link: payload.link!,
         expiryDays: payload.expiryDays || 7,
       });
+
+      await createAuditLog({
+        entityType: AuditEntityType.CANDIDATE,
+        entityId: payload.receiverId,
+        action: "WHATSAPP_SENT",
+        metadata: {
+          phone: payload.toPhone,
+        },
+        performedBy: "SYSTEM",
+      });
     } else if (receiver === "VERIFIER") {
       await sendVerifierWhatsApp({
         to: payload.toPhone,
@@ -63,17 +85,17 @@ export async function sendNotification(
         candidateName: payload.candidateName!,
         link: payload.link!,
       });
-    }
 
-    await createAuditLog({
-      entityType: AuditEntityType.CANDIDATE,
-      entityId: payload.receiverId,
-      action: "WHATSAPP_SENT",
-      metadata: {
-        phone: payload.toPhone,
-      },
-      performedBy: "SYSTEM",
-    });
+      await createAuditLog({
+        entityType: AuditEntityType.VERIFICATION_CONTACT,
+        entityId: payload.receiverId,
+        action: "WHATSAPP_SENT",
+        metadata: {
+          phone: payload.toPhone,
+        },
+        performedBy: "SYSTEM",
+      });
+    }
   }
 }
 
@@ -110,7 +132,7 @@ export async function sendVerificationEmail(contactId: string) {
   await sendEmail({
     to: contact.email,
     subject: email.subject,
-    html: email.subject,
+    html: email.html,
   });
 
   await createAuditLog({

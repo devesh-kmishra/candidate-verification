@@ -1,4 +1,4 @@
-import express from "express";
+import express, { Request, Response, NextFunction } from "express";
 import cors from "cors";
 import path from "path";
 import employmentRoutes from "./routes/employment.routes";
@@ -32,5 +32,16 @@ app.use("/api", discrepancyRoutes);
 app.use("/api", diffRoutes);
 app.use("/api", organizationRoutes);
 app.use("/api", configRoutes);
+
+app.use((err: any, req: Request, res: Response, next: NextFunction) => {
+  console.error("GLOBAL ERROR:", err);
+
+  res
+    .status(err.statusCode || 500)
+    .json({
+      error: err.message || "Internal Server Error",
+      details: err.details || undefined,
+    });
+});
 
 export default app;
