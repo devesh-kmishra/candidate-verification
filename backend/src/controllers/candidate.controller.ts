@@ -1,32 +1,36 @@
-import { Request, Response } from "express";
+import { Request, Response, NextFunction } from "express";
 import { prisma } from "../lib/prisma";
 import { VerificationStatus } from "../../generated/prisma/enums";
 import cloudinary from "../lib/cloudinary";
 import { createCandidateSummary } from "../services/candidateSummary.service";
 
-type Timeline = {
-  timestamp: Date;
-  type: string;
-  employmentId: string;
-  company: string;
-  documentType?: string;
-  fileUrl?: string;
-  message: string;
-};
+// type Timeline = {
+//   timestamp: Date;
+//   type: string;
+//   employmentId: string;
+//   company: string;
+//   documentType?: string;
+//   fileUrl?: string;
+//   message: string;
+// };
 
 type QueueStatus = "all" | "pending" | "completed" | "failed";
 
-export const createCandidate = async (req: Request, res: Response) => {
-  const { organizationId, name, email, phone, city, joiningDesignation } =
-    req.body;
-
-  if (!name || !email) {
-    return res.status(400).json({
-      message: "Name and email are required",
-    });
-  }
-
+export const createCandidate = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   try {
+    const { organizationId, name, email, phone, city, joiningDesignation } =
+      req.body;
+
+    if (!name || !email) {
+      return res.status(400).json({
+        message: "Name and email are required",
+      });
+    }
+
     const candidate = await prisma.candidate.create({
       data: {
         organizationId,
@@ -39,17 +43,8 @@ export const createCandidate = async (req: Request, res: Response) => {
     });
 
     res.status(201).json(candidate);
-  } catch (error: unknown) {
-    if (error instanceof Error && error.message.includes("Unique constraint")) {
-      return res.status(409).json({
-        message: "Candidate with this email already exists",
-      });
-    }
-
-    console.error("Create candidate error:", error);
-    res.status(500).json({
-      message: "Failed to create candidate",
-    });
+  } catch (err) {
+    next(err);
   }
 };
 
@@ -162,30 +157,46 @@ export const createCandidate = async (req: Request, res: Response) => {
 //   });
 // };
 
-export const getCandidateSummary = async (req: Request, res: Response) => {
-  const candidateId = req.params.candidateId as string;
+export const getCandidateSummary = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const candidateId = req.params.candidateId as string;
 
-  const summary = await createCandidateSummary(candidateId);
+    const summary = await createCandidateSummary(candidateId);
 
-  res.json(summary);
+    res.json(summary);
+  } catch (err) {
+    next(err);
+  }
 };
 
-export const addCandidateNote = async (req: Request, res: Response) => {
-  const candidateId = req.params.candidateId as string;
-  const { note } = req.body;
+export const addCandidateNote = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const candidateId = req.params.candidateId as string;
+    const { note } = req.body;
 
-  if (!note || !note.trim()) {
-    return res.status(400).json({ message: "Note is required" });
+    if (!note || !note.trim()) {
+      return res.status(400).json({ message: "Note is required" });
+    }
+
+    const createdNote = await prisma.candidateNote.create({
+      data: {
+        candidateId,
+        note,
+      },
+    });
+
+    res.status(201).json(createdNote);
+  } catch (err) {
+    next(err);
   }
-
-  const createdNote = await prisma.candidateNote.create({
-    data: {
-      candidateId,
-      note,
-    },
-  });
-
-  res.status(201).json(createdNote);
 };
 
 // export const searchCandidates = async (req: Request, res: Response) => {
@@ -308,14 +319,18 @@ export const addCandidateNote = async (req: Request, res: Response) => {
 //   });
 // };
 
-export const uploadCandidateResume = async (req: Request, res: Response) => {
-  const candidateId = req.params.candidateId as string;
-
-  if (!req.file) {
-    return res.status(400).json({ message: "Resume file is required" });
-  }
-
+export const uploadCandidateResume = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   try {
+    const candidateId = req.params.candidateId as string;
+
+    if (!req.file) {
+      return res.status(400).json({ message: "Resume file is required" });
+    }
+
     const uploadResult = await new Promise<any>((resolve, reject) => {
       cloudinary.uploader
         .upload_stream(
@@ -343,11 +358,8 @@ export const uploadCandidateResume = async (req: Request, res: Response) => {
       message: "Resume uploaded successfully",
       resumeUrl: candidate.resumeUrl,
     });
-  } catch (error) {
-    console.error("Resume upload failed:", error);
-    res.status(500).json({
-      message: "Failed to upload resume",
-    });
+  } catch (err) {
+    next(err);
   }
 };
 

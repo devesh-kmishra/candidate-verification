@@ -1,18 +1,19 @@
-import { Request, Response } from "express";
+import { Request, Response, NextFunction } from "express";
 import { createVerificationCaseFromConfig } from "../services/verificationCreation.service";
 
 export const startCandidateVerification = async (
   req: Request,
   res: Response,
+  next: NextFunction,
 ) => {
-  const candidateId = req.params.candidateId as string;
-  const { organizationId } = req.body; // todo: taken from auth later
-
-  if (!organizationId) {
-    return res.status(400).json({ error: "organizationId is required" });
-  }
-
   try {
+    const candidateId = req.params.candidateId as string;
+    const { organizationId } = req.body; // todo: taken from auth later
+
+    if (!organizationId) {
+      return res.status(400).json({ error: "organizationId is required" });
+    }
+
     const verificationCase = await createVerificationCaseFromConfig(
       candidateId,
       organizationId,
@@ -22,9 +23,7 @@ export const startCandidateVerification = async (
       message: "Verification started",
       verificationCaseId: verificationCase.id,
     });
-  } catch (err: any) {
-    res
-      .status(500)
-      .json({ error: err.message ?? "Failed to start verification" });
+  } catch (err) {
+    next(err);
   }
 };
