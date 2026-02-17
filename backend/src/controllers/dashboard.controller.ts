@@ -1,8 +1,16 @@
-import { Request, Response } from "express";
+import { Request, Response, NextFunction } from "express";
 import { getVerificationDashboardStats } from "../services/dashboard.service";
 
-export const getVerificationDashboard = async (req: Request, res: Response) => {
-  const stats = await getVerificationDashboardStats();
+export const getVerificationDashboard = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const stats = await getVerificationDashboardStats();
 
-  res.json(stats);
+    res.json(stats);
+  } catch (err) {
+    next(err);
+  }
 };

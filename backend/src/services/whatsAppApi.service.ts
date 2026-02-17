@@ -3,15 +3,25 @@ import axios from "axios";
 const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
 const token = process.env.WHATSAPP_ACCESS_TOKEN;
 
-const baseUrl = `https://graph.facebook.com/v23.0/${phoneNumberId}/messages`;
+const baseUrl = `https://graph.facebook.com/v24.0/${phoneNumberId}/messages`;
 
 async function sendTemplateMessage(payload: any) {
-  return axios.post(baseUrl, payload, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-  });
+  try {
+    if (!phoneNumberId || !token) {
+      throw new Error("WhatsApp environment variables not configured properly");
+    }
+
+    return await axios.post(baseUrl, payload, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+  } catch (err: any) {
+    console.error("WHATSAPP STATUS:", err.respose?.status);
+    console.error("WHATSAPP ERROR:", err.respose?.data);
+    throw err;
+  }
 }
 
 export async function sendCandidateVerificationWhatsApp({
@@ -25,6 +35,8 @@ export async function sendCandidateVerificationWhatsApp({
   link: string;
   expiryDays: number;
 }) {
+  const token = link.split("/").pop();
+
   return sendTemplateMessage({
     messaging_product: "whatsapp",
     to,
@@ -40,6 +52,12 @@ export async function sendCandidateVerificationWhatsApp({
             { type: "text", text: link },
             { type: "text", text: expiryDays.toString() },
           ],
+        },
+        {
+          type: "button",
+          sub_type: "url",
+          index: 0,
+          parameters: [{ type: "text", text: token }],
         },
       ],
     },
@@ -57,6 +75,8 @@ export async function sendVerifierWhatsApp({
   candidateName: string;
   link: string;
 }) {
+  const token = link.split("/").pop();
+
   return sendTemplateMessage({
     messaging_product: "whatsapp",
     to,
@@ -72,6 +92,12 @@ export async function sendVerifierWhatsApp({
             { type: "text", text: candidateName },
             { type: "text", text: link },
           ],
+        },
+        {
+          type: "button",
+          sub_type: "url",
+          index: 0,
+          parameters: [{ type: "text", text: token }],
         },
       ],
     },
