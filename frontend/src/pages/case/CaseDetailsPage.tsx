@@ -223,7 +223,7 @@ const CaseDetailsPage = () => {
 
               {/* CONTACTS */}
               <div className="mt-5">
-                <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center justify-between mb-2">m 
                   <div className="flex items-center gap-2 text-white/70 text-sm">
                     <Users className="w-4 h-4" />
                     Contacts
