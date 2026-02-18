@@ -1,8 +1,12 @@
 import { Router } from "express";
-import { submitVerificationResponse } from "../controllers/verification.controller";
+import {
+  getVerifierForm,
+  submitVerifierResponse,
+} from "../controllers/verification.controller";
 
 const router = Router();
 
-router.post("/verify/:token", submitVerificationResponse);
+router.get("/verify/:token", getVerifierForm);
+router.post("/verify/:token", submitVerifierResponse);
 
 export default router;
