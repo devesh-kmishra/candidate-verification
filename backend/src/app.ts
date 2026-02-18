@@ -1,10 +1,10 @@
-import express, { Request, Response, NextFunction } from "express";
+import express, { Request, Response } from "express";
 import cors from "cors";
 import path from "path";
 import employmentRoutes from "./routes/employment.routes";
 import candidateRoutes from "./routes/candidate.routes";
 import dashboardRoutes from "./routes/dashboard.routes";
-import verificationRoutes from "./routes/verification.routes";
+import verifierRoutes from "./routes/verification.routes";
 import candidateFormRoutes from "./routes/candidateForm.routes";
 import discrepancyRoutes from "./routes/discrepancy.routes";
 import diffRoutes from "./routes/diff.routes";
@@ -26,22 +26,20 @@ app.use("/api/employment-verifications", employmentRoutes);
 app.use("/api/candidates", candidateRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/users", userRoutes);
-app.use("/api", verificationRoutes);
+app.use("/api", verifierRoutes);
 app.use("/api", candidateFormRoutes);
 app.use("/api", discrepancyRoutes);
 app.use("/api", diffRoutes);
 app.use("/api", organizationRoutes);
 app.use("/api", configRoutes);
 
-app.use((err: any, req: Request, res: Response, next: NextFunction) => {
+app.use((err: any, req: Request, res: Response) => {
   console.error("GLOBAL ERROR:", err);
 
-  res
-    .status(err.statusCode || 500)
-    .json({
-      error: err.message || "Internal Server Error",
-      details: err.details || undefined,
-    });
+  res.status(err.statusCode || 500).json({
+    error: err.message || "Internal Server Error",
+    details: err.details || undefined,
+  });
 });
 
 export default app;

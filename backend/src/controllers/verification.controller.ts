@@ -6,7 +6,67 @@ import {
 } from "../services/verification.service";
 import { validateAnswer } from "../utils/prisma";
 
-export const submitVerificationResponse = async (
+export const getVerifierForm = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const token = req.params.token as string;
+
+    const contact = await prisma.verificationContact.findUnique({
+      where: { token },
+      include: {
+        verificationItem: {
+          include: {
+            verificationCase: {
+              include: {
+                candidate: true,
+              },
+            },
+            verificationTypeConfig: {
+              include: {
+                questions: {
+                  orderBy: { order: "asc" },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!contact) {
+      return res.status(404).json({ error: "Invalid or expired link" });
+    }
+
+    if (contact.tokenExpiresAt < new Date()) {
+      return res.status(410).json({ error: "Verification link expired" });
+    }
+
+    const { candidate } = contact.verificationItem.verificationCase;
+    const questions = contact.verificationItem.verificationTypeConfig.questions;
+
+    res.json({
+      contactId: contact.id,
+      candidate: {
+        name: candidate.name,
+      },
+      verificationType: contact.verificationItem.verificationTypeConfig.type,
+      questions: questions.map((q) => ({
+        key: q.key,
+        label: q.label,
+        type: q.type,
+        required: q.required,
+        options: q.options,
+      })),
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const submitVerifierResponse = async (
   req: Request,
   res: Response,
   next: NextFunction,
