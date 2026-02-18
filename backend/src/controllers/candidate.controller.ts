@@ -14,7 +14,13 @@ import { createCandidateSummary } from "../services/candidateSummary.service";
 //   message: string;
 // };
 
-type QueueStatus = "all" | "pending" | "completed" | "failed";
+type QueueStatus =
+  | "all"
+  | "PENDING"
+  | "IN_PROGRESS"
+  | "CLEAR"
+  | "DISCREPANCY"
+  | "FAILED";
 
 export const createCandidate = async (
   req: Request,
@@ -244,80 +250,89 @@ export const addCandidateNote = async (
 //   });
 // };
 
-// export const getVerificationQueue = async (req: Request, res: Response) => {
-//   const status = (req.query.status as QueueStatus) || "all";
-//   const city = req.query.city as string | undefined;
-//   const designation = req.query.designation as string | undefined;
-//   const q = req.query.q as string | undefined;
+export const getVerificationQueue = async (req: Request, res: Response) => {
+  const status = (req.query.status as QueueStatus) || "all";
+  const city = req.query.city as string | undefined;
+  const designation = req.query.designation as string | undefined;
+  const q = req.query.q as string | undefined;
 
-//   const candidates = await prisma.candidate.findMany({
-//     where: {
-//       ...(city && {
-//         city: { equals: city, mode: "insensitive" },
-//       }),
-//       ...(designation && {
-//         joiningDesignation: {
-//           contains: designation,
-//           mode: "insensitive",
-//         },
-//       }),
-//       ...(q && {
-//         OR: [
-//           { name: { contains: q, mode: "insensitive" } },
-//           { email: { contains: q, mode: "insensitive" } },
-//           { phone: { contains: q } },
-//         ],
-//       }),
-//     },
-//     include: {
-//       employments: {
-//         select: { status: true, createdAt: true, updatedAt: true },
-//       },
-//     },
-//     orderBy: { createdAt: "desc" },
-//   });
+  const candidates = await prisma.candidate.findMany({
+    where: {
+      ...(city && {
+        city: { equals: city, mode: "insensitive" },
+      }),
+      ...(designation && {
+        joiningDesignation: {
+          contains: designation,
+          mode: "insensitive",
+        },
+      }),
+      ...(q && {
+        OR: [
+          { name: { contains: q, mode: "insensitive" } },
+          { email: { contains: q, mode: "insensitive" } },
+          { phone: { contains: q } },
+        ],
+      }),
+    },
+    include: {
+      verificationCases: {
+        include: {
+          verificationItems: true,
+        },
+      },
+    },
+    orderBy: { createdAt: "desc" },
+  });
 
-//   const results = candidates
-//     .map((candidate) => {
-//       const statuses = candidate.employments.map((e) => e.status);
+  const results = candidates
+    .map((candidate) => {
+      const allItems = candidate.verificationCases.flatMap(
+        (vc) => vc.verificationItems,
+      );
 
-//       const queueStatus = deriveQueueStatus(statuses);
-//       const riskScore = calculateCandidateRisk(statuses);
-//       const progress = calculateProgress(statuses);
+      const statuses = allItems.map((item) => item.status);
 
-//       const createdDates = candidate.employments.map((e) => e.createdAt);
-//       const tatDays = calculateTAT(createdDates);
+      const queueStatus = deriveQueueStatus(statuses);
+      const riskScore = calculateCandidateRisk(statuses);
+      const progress = calculateProgress(statuses);
 
-//       const lastUpdated = candidate.employments.reduce(
-//         (latest, e) =>
-//           e.updatedAt && e.updatedAt > latest ? e.updatedAt : latest,
-//         candidate.createdAt,
-//       );
+      const tatDays = calculateTAT(
+        candidate.verificationCases.map((vc) => vc.startedAt),
+      );
 
-//       return {
-//         id: candidate.id,
-//         name: candidate.name,
-//         email: candidate.email,
-//         city: candidate.city,
-//         joiningDesignation: candidate.joiningDesignation,
-//         verificationStatus: queueStatus,
-//         riskScore,
-//         progress,
-//         tatDays,
-//         lastUpdated,
-//       };
-//     })
-//     .filter((candidate) => {
-//       if (status === "all") return true;
+      const lastUpdated =
+        allItems.length > 0
+          ? allItems.reduce(
+              (latest, item) =>
+                item.updatedAt > latest ? item.updatedAt : latest,
+              candidate.createdAt,
+            )
+          : candidate.createdAt;
 
-//       return candidate.verificationStatus === status;
-//     });
+      return {
+        id: candidate.id,
+        name: candidate.name,
+        email: candidate.email,
+        city: candidate.city,
+        joiningDesignation: candidate.joiningDesignation,
+        verificationStatus: queueStatus,
+        riskScore,
+        progress,
+        tatDays,
+        lastUpdated,
+      };
+    })
+    .filter((candidate) => {
+      if (status === "all") return true;
+      return candidate.verificationStatus === status;
+    });
 
-//   res.json({
-//     count: results.length,
-//     results,
-//   });
-// };
+  res.json({
+    count: results.length,
+    results,
+  });
+};
 
 export const uploadCandidateResume = async (
   req: Request,
@@ -389,21 +404,23 @@ function getRiskForStatus(status: string): number {
 }
 
 function deriveQueueStatus(statuses: VerificationStatus[]): QueueStatus {
+  if (statuses.length === 0) return "all";
+
   if (
     statuses.includes(VerificationStatus.FAILED) ||
     statuses.includes(VerificationStatus.DISCREPANCY)
   ) {
-    return "failed";
+    return "FAILED";
   }
 
   if (
     statuses.includes(VerificationStatus.PENDING) ||
     statuses.includes(VerificationStatus.IN_PROGRESS)
   ) {
-    return "pending";
+    return "PENDING";
   }
 
-  return "completed";
+  return "CLEAR";
 }
 
 function calculateCandidateRisk(statuses: VerificationStatus[]): number {
@@ -411,6 +428,8 @@ function calculateCandidateRisk(statuses: VerificationStatus[]): number {
 }
 
 function calculateProgress(statuses: VerificationStatus[]): string {
+  if (statuses.length === 0) return "0/0";
+
   const completed = statuses.filter(
     (s) => s === "CLEAR" || s === "FAILED" || s === "DISCREPANCY",
   ).length;
