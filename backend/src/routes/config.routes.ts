@@ -8,14 +8,10 @@ import {
 
 const router = Router();
 
-router.post(
-  "/verification-config",
-  requireRole([UserRole.ADMIN]),
-  createConfigHandler,
-);
+router.post("/", requireRole([UserRole.ADMIN]), createConfigHandler);
 
 router.get(
-  "/verification-config/:organizationId/active",
+  "/:organizationId/active",
   requireRole([UserRole.ADMIN]),
   getActiveConfigHandler,
 );

@@ -6,13 +6,7 @@ import {
 
 const router = Router();
 
-router.get(
-  "/verification-cases/:verificationCaseId/form",
-  getCandidateVerificationForm,
-);
-router.post(
-  "/verification-cases/:verificationCaseId/form",
-  submitCandidateVerificationForm,
-);
+router.get("/:verificationCaseId/form", getCandidateVerificationForm);
+router.post("/:verificationCaseId/form", submitCandidateVerificationForm);
 
 export default router;

@@ -6,7 +6,7 @@ import {
 
 const router = Router();
 
-router.get("/verify/:token", getVerifierForm);
-router.post("/verify/:token", submitVerifierResponse);
+router.get("/:token", getVerifierForm);
+router.post("/:token", submitVerifierResponse);
 
 export default router;

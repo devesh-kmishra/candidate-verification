@@ -1,10 +1,10 @@
 import { Router } from "express";
 import { requireRole } from "../middlewares/role.middleware";
 import { UserRole } from "../../generated/prisma/enums";
-import { createOrganizationHandler } from "../controllers/organization.controller";
+import { addCallingLog } from "../controllers/callingLog.controller";
 
 const router = Router();
 
-router.post("/", requireRole([UserRole.ADMIN]), createOrganizationHandler);
+router.post("/:contactId/call-log", requireRole([UserRole.HR]), addCallingLog);
 
 export default router;

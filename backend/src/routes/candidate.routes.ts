@@ -5,7 +5,7 @@ import {
   // getCandidateOverview,
   getCandidateSummary,
   // getEmploymentTimeline,
-  // getVerificationQueue,
+  getVerificationQueue,
   // searchCandidates,
   uploadCandidateResume,
 } from "../controllers/candidate.controller";
@@ -16,7 +16,7 @@ import { UserRole } from "../../generated/prisma/enums";
 
 const router = Router();
 
-// router.get("/queue", getVerificationQueue);
+router.get("/queue", getVerificationQueue);
 // router.get("/search", searchCandidates);
 // router.get("/:candidateId/employment-timeline", getEmploymentTimeline);
 router.get(

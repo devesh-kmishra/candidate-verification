@@ -57,8 +57,7 @@ model EmploymentVerification {
   createdAt            DateTime           @default(now())
   updatedAt            DateTime           @updatedAt()
 
-  response    EmpVerificationResponse?
-  callingLogs CallingLog[]
+  response EmpVerificationResponse?
 
   @@index([candidateId])
   @@index([status])
@@ -76,13 +75,16 @@ model EmpVerificationResponse {
 }
 
 model CallingLog {
-  id                       String   @id @default(uuid())
-  employmentVerificationId String
-  callTime                 DateTime
-  outcome                  String
-  notes                    String?
+  id                    String   @id @default(uuid())
+  verificationContactId String
+  callTime              DateTime
+  outcome               String
+  notes                 String?
+  createdAt             DateTime @default(now())
 
-  employmentVerification EmploymentVerification @relation(fields: [employmentVerificationId], references: [id])
+  verificationContact VerificationContact @relation(fields: [verificationContactId], references: [id])
+
+  @@index([verificationContactId])
 }
 
 model VerificationDocument {
@@ -197,6 +199,7 @@ model VerificationContact {
   verificationItem      VerificationItem       @relation(fields: [verificationItemId], references: [id])
   verificationResponses VerificationResponse[]
   verificationDocuments VerificationDocument[]
+  callingLogs           CallingLog[]
 
   @@index([verificationItemId])
   @@index([token])
