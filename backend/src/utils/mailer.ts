@@ -16,10 +16,12 @@ export async function sendEmail(params: {
   subject: string;
   html: string;
 }) {
-  await mailer.sendMail({
+  const mailInfo = await mailer.sendMail({
     from: process.env.SMTP_FROM,
     to: params.to,
     subject: params.subject,
     html: params.html,
   });
+
+  console.log("Email Preview URL:", nodemailer.getTestMessageUrl(mailInfo));
 }
