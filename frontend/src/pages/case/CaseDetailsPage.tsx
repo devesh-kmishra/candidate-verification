@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { ShieldCheck, Users, Plus, Loader2 } from "lucide-react";
 import { VerificationHRAPI } from "../../api/verificationSettings.api";
+import VerificationTimeline from "../../components/verification/VerificationTimeline";
 
 import type {
   VerificationCaseDTO,
@@ -275,6 +276,7 @@ const CaseDetailsPage = () => {
           await handleAddContact(activeItem, data);
         }}
       />
+      <VerificationTimeline events={caseData.timeline} />
     </div>
   );
 };

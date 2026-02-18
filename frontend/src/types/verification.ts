@@ -77,13 +77,13 @@ export type VerificationCaseDTO = {
   startedAt: string;
   completedAt?: string | null;
   items: VerificationItemDTO[];
+  timeline: VerificationTimelineEventDTO[]
 };
 
 export type VerificationItemDTO = {
   id: string;
   verificationTypeConfigId: string;
-  verificationType: VerificationType;
-
+  verificationType: VerificationType; 
   status: VerificationStatus;
   mandatory: boolean;
   executionMode: ExecutionMode;
@@ -91,6 +91,7 @@ export type VerificationItemDTO = {
   completedAt?: string | null;
   contacts: VerificationContactDTO[];
   discrepancies: VerificationDiscrepanciesDTO[];
+  timeline?: VerificationTimelineEventDTO[]
 };
 
 export type VerificationContactDTO = {
@@ -112,6 +113,10 @@ export type VerificationResponseDTO = {
   questionType: QuestionType;
   answer: any;
   createdAt: string;
+  question?: string;
+  expectedValue?: string;
+  actualValue?: string;
+  status?: VerificationStatus;
 };
 
 export type VerificationDocumentDTO = {
@@ -180,4 +185,20 @@ export type SubmitVerificationResponsePayload = {
 export type VerificationAnswerPayloadDTP = {
   questionId: string;
   answer: string | boolean | string[] | Date | null;
+};
+
+export type VerificationTimelineEventDTO = {
+  id: string;
+  type:
+    | "CASE_CREATED"
+    | "CONTACT_ADDED"
+    | "EMAIL_SENT"
+    | "RESPONSE_RECEIVED"
+    | "VERIFICATION_COMPLETED"
+    | "DISCREPANCY_FOUND";
+
+  title: string;
+  description?: string;
+  timestamp: string;
+  actor?: string;
 };
