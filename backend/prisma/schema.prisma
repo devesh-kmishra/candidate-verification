@@ -140,17 +140,18 @@ model VerificationQuestionTemplate {
 }
 
 model VerificationCase {
-  id                   String             @id @default(uuid())
-  candidateId          String
-  verificationConfigId String
-  status               VerificationStatus
-  riskScore            Int                @default(0)
-  candidateToken       String             @unique
-  candidateTokenExp    DateTime
-  startedAt            DateTime           @default(now())
-  completedAt          DateTime?
-  createdAt            DateTime           @default(now())
-  updatedAt            DateTime           @updatedAt()
+  id                     String             @id @default(uuid())
+  candidateId            String
+  verificationConfigId   String
+  status                 VerificationStatus
+  riskScore              Int                @default(0)
+  candidateToken         String             @unique
+  candidateTokenExp      DateTime
+  candidateFormSubmitted Boolean            @default(false)
+  startedAt              DateTime           @default(now())
+  completedAt            DateTime?
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt()
 
   candidate          Candidate          @relation(fields: [candidateId], references: [id])
   verificationConfig VerificationConfig @relation(fields: [verificationConfigId], references: [id])
@@ -201,6 +202,7 @@ model VerificationContact {
   verificationDocuments VerificationDocument[]
   callingLogs           CallingLog[]
 
+  @@unique([verificationItemId, email])
   @@index([verificationItemId])
   @@index([token])
   @@index([status])
