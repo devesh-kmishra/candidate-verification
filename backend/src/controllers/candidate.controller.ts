@@ -4,6 +4,13 @@ import { VerificationStatus } from "../../generated/prisma/enums";
 import cloudinary from "../lib/cloudinary";
 import { createCandidateSummary } from "../services/candidateSummary.service";
 
+interface EmploymentMetadata {
+  companyName?: string;
+  designation?: string;
+  tenureFrom?: string;
+  tenureTo?: string;
+}
+
 type TimelineEventType =
   | "CASE_STARTED"
   | "ITEM_CREATED"
@@ -68,45 +75,67 @@ export const createCandidate = async (
   }
 };
 
-// export const getCandidateOverview = async (req: Request, res: Response) => {
-//   const candidateId = req.params.candidateId as string;
+export const getCandidateOverview = async (
+  req: Request,
+  res: Response,
+  next: Function,
+) => {
+  try {
+    const candidateId = req.params.candidateId as string;
 
-//   const candidate = await prisma.candidate.findUnique({
-//     where: { id: candidateId },
-//     include: {
-//       employments: {
-//         orderBy: { createdAt: "desc" },
-//         take: 1,
-//       },
-//     },
-//   });
+    const candidate = await prisma.candidate.findUnique({
+      where: { id: candidateId },
+      include: {
+        verificationCases: {
+          orderBy: { createdAt: "desc" },
+          take: 1,
+          include: {
+            verificationItems: {
+              include: {
+                verificationTypeConfig: true,
+              },
+            },
+          },
+        },
+      },
+    });
 
-//   if (!candidate) {
-//     return res.status(404).json({ message: "Candidate not found" });
-//   }
+    if (!candidate) {
+      return res.status(404).json({ message: "Candidate not found" });
+    }
 
-//   const latestEmployment = candidate.employments[0];
+    const latestCase = candidate.verificationCases[0];
 
-//   const allStatuses = await prisma.employmentVerification.findMany({
-//     where: { candidateId },
-//     select: { status: true },
-//   });
+    const verificationStatus = latestCase?.status ?? "PENDING";
 
-//   const verificationStatus = getOverallStatusFromEmployments(
-//     allStatuses.map((e: { status: VerificationStatus }) => e.status),
-//   );
+    const latestEmploymentItem = latestCase?.verificationItems
+      .filter(
+        (item) => item.verificationTypeConfig.type === "PREVIOUS_EMPLOYMENT",
+      )
+      .sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      )[0];
 
-//   res.json({
-//     candidateId: candidate.id,
-//     name: candidate.name,
-//     email: candidate.email,
-//     phone: candidate.phone,
-//     city: candidate.city,
-//     position:
-//       candidate.joiningDesignation ?? latestEmployment?.designation ?? "-",
-//     verificationStatus,
-//   });
-// };
+    const metadata =
+      (latestEmploymentItem?.metadata as EmploymentMetadata | null) ?? {};
+
+    const position =
+      candidate.joiningDesignation ?? metadata?.designation ?? "-";
+
+    res.json({
+      candidateId: candidate.id,
+      name: candidate.name,
+      email: candidate.email,
+      phone: candidate.phone,
+      city: candidate.city,
+      position,
+      verificationStatus,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
 
 export const getEmploymentTimeline = async (
   req: Request,
@@ -326,50 +355,58 @@ export const addCandidateNote = async (
   }
 };
 
-// export const searchCandidates = async (req: Request, res: Response) => {
-//   const query = req.query.q as string | undefined;
+export const searchCandidates = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const query = req.query.q as string | undefined;
 
-//   if (!query || query.trim().length < 2) {
-//     return res.status(400).json({
-//       message: "Search query must be at least 2 characters",
-//     });
-//   }
+    if (!query || query.trim().length < 2) {
+      return res.status(400).json({
+        message: "Search query must be at least 2 characters",
+      });
+    }
 
-//   const candidates = await prisma.candidate.findMany({
-//     where: {
-//       OR: [
-//         { name: { contains: query, mode: "insensitive" } },
-//         { email: { contains: query, mode: "insensitive" } },
-//         { phone: { contains: query } },
-//       ],
-//     },
-//     take: 10,
-//     include: {
-//       employments: {
-//         select: { status: true },
-//       },
-//     },
-//   });
+    const candidates = await prisma.candidate.findMany({
+      where: {
+        OR: [
+          { name: { contains: query, mode: "insensitive" } },
+          { email: { contains: query, mode: "insensitive" } },
+          { phone: { contains: query } },
+        ],
+      },
+      take: 10,
+      include: {
+        verificationCases: {
+          select: { status: true },
+        },
+      },
+    });
 
-//   const results = candidates.map((candidate) => {
-//     const statuses = candidate.employments.map((e) => e.status);
+    const results = candidates.map((candidate) => {
+      const statuses = candidate.verificationCases.map((c) => c.status);
 
-//     return {
-//       id: candidate.id,
-//       name: candidate.name,
-//       email: candidate.email,
-//       phone: candidate.phone,
-//       city: candidate.city,
-//       joiningDesignation: candidate.joiningDesignation,
-//       verificationStatus: getOverallStatusFromEmployments(statuses),
-//     };
-//   });
+      return {
+        id: candidate.id,
+        name: candidate.name,
+        email: candidate.email,
+        phone: candidate.phone,
+        city: candidate.city,
+        joiningDesignation: candidate.joiningDesignation,
+        verificationStatus: getOverallStatusFromCases(statuses),
+      };
+    });
 
-//   res.json({
-//     count: results.length,
-//     results,
-//   });
-// };
+    res.json({
+      count: results.length,
+      results,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
 
 export const getVerificationQueue = async (req: Request, res: Response) => {
   const status = (req.query.status as QueueStatus) || "all";
@@ -499,13 +536,13 @@ export const uploadCandidateResume = async (
   }
 };
 
-function getOverallStatusFromEmployments(statuses: VerificationStatus[]) {
+function getOverallStatusFromCases(statuses: VerificationStatus[]) {
   if (statuses.includes("FAILED")) return "HIGH_RISK";
   if (statuses.includes("DISCREPANCY")) return "REVIEW";
   if (statuses.some((s) => s === "PENDING" || s === "IN_PROGRESS")) {
     return "IN_PROGRESS";
   }
-  return "CLEAR";
+  return statuses.length ? "CLEAR" : "PENDING";
 }
 
 function getRiskForStatus(status: string): number {
