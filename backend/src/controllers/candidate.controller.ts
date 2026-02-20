@@ -4,15 +4,29 @@ import { VerificationStatus } from "../../generated/prisma/enums";
 import cloudinary from "../lib/cloudinary";
 import { createCandidateSummary } from "../services/candidateSummary.service";
 
-// type Timeline = {
-//   timestamp: Date;
-//   type: string;
-//   employmentId: string;
-//   company: string;
-//   documentType?: string;
-//   fileUrl?: string;
-//   message: string;
-// };
+type TimelineEventType =
+  | "CASE_STARTED"
+  | "ITEM_CREATED"
+  | "CANDIDATE_FORM_SUBMITTED"
+  | "CONTACT_ADDED"
+  | "CONTACT_RESPONDED"
+  | "DOCUMENT_UPLOADED"
+  | "CALL_LOGGED"
+  | "DISCREPANCY_CREATED"
+  | "ITEM_COMPLETED"
+  | "CASE_COMPLETED";
+
+type Timeline = {
+  timestamp: Date;
+  type: TimelineEventType;
+  verificationCaseId: string;
+  verificationItemId?: string;
+  verificationContactId?: string;
+  company?: string;
+  contactName?: string;
+  message: string;
+  metadata?: any;
+};
 
 type QueueStatus =
   | "all"
@@ -94,74 +108,181 @@ export const createCandidate = async (
 //   });
 // };
 
-// export const getEmploymentTimeline = async (req: Request, res: Response) => {
-//   const candidateId = req.params.candidateId as string;
+export const getEmploymentTimeline = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const candidateId = req.params.candidateId as string;
 
-//   const employments = await prisma.employmentVerification.findMany({
-//     where: { candidateId },
-//     include: {
-//       response: {
-//         include: {
-//           documents: true,
-//         },
-//       },
-//       callingLogs: true,
-//     },
-//   });
+    const cases = await prisma.verificationCase.findMany({
+      where: { candidateId },
+      include: {
+        verificationItems: {
+          include: {
+            candidateVerificationResponses: true,
+            contacts: {
+              include: {
+                verificationResponses: true,
+                verificationDocuments: true,
+                callingLogs: true,
+              },
+            },
+            verificationDiscrepancies: true,
+          },
+        },
+      },
+      orderBy: { createdAt: "asc" },
+    });
 
-//   const timeline: Timeline[] = [];
+    const timeline: Timeline[] = [];
 
-//   for (const emp of employments) {
-//     timeline.push({
-//       timestamp: emp.createdAt,
-//       type: "EMPLOYMENT_ADDED",
-//       employmentId: emp.id,
-//       company: emp.previousCompanyName,
-//       message: `Employment at ${emp.previousCompanyName} added`,
-//     });
+    for (const verificationCase of cases) {
+      timeline.push({
+        timestamp: verificationCase.startedAt,
+        type: "CASE_STARTED",
+        verificationCaseId: verificationCase.id,
+        message: "Verification case started",
+      });
 
-//     if (emp.response) {
-//       timeline.push({
-//         timestamp: emp.response.submittedAt,
-//         type: "VERIFICATION_SUBMITTED",
-//         employmentId: emp.id,
-//         company: emp.previousCompanyName,
-//         message: "Verification submitted by previous employer",
-//       });
+      if (verificationCase.candidateFormSubmitted) {
+        timeline.push({
+          timestamp: verificationCase.updatedAt,
+          type: "CANDIDATE_FORM_SUBMITTED",
+          verificationCaseId: verificationCase.id,
+          message: "Candidate submitted verification form",
+        });
+      }
 
-//       for (const doc of emp.response.documents) {
-//         timeline.push({
-//           timestamp: doc.uploadedAt,
-//           type: "DOCUMENT_UPLOADED",
-//           employmentId: emp.id,
-//           company: emp.previousCompanyName,
-//           documentType: doc.type,
-//           fileUrl: doc.fileUrl,
-//           message: `${doc.type.replace("_", " ")} uploaded`,
-//         });
-//       }
-//     }
+      for (const item of verificationCase.verificationItems) {
+        const metadata = item.metadata as any;
+        const companyName = metadata?.companyName || "Employment Verification";
 
-//     for (const call of emp.callingLogs) {
-//       timeline.push({
-//         timestamp: call.callTime,
-//         type: "CALL_LOGGED",
-//         employmentId: emp.id,
-//         company: emp.previousCompanyName,
-//         message: `Manual HR call logged: ${call.outcome}`,
-//       });
-//     }
-//   }
+        timeline.push({
+          timestamp: item.createdAt,
+          type: "ITEM_CREATED",
+          verificationCaseId: verificationCase.id,
+          verificationItemId: item.id,
+          company: companyName,
+          message: `${companyName} verification initiated`,
+          metadata,
+        });
 
-//   timeline.sort(
-//     (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
-//   );
+        for (const response of item.candidateVerificationResponses) {
+          timeline.push({
+            timestamp: response.createdAt,
+            type: "CANDIDATE_FORM_SUBMITTED",
+            verificationCaseId: verificationCase.id,
+            verificationItemId: item.id,
+            company: companyName,
+            message: `Candidate answered: ${response.questionLabel}`,
+          });
+        }
 
-//   res.json({
-//     candidateId,
-//     timeline,
-//   });
-// };
+        for (const contact of item.contacts) {
+          timeline.push({
+            timestamp: contact.createdAt,
+            type: "CONTACT_ADDED",
+            verificationCaseId: verificationCase.id,
+            verificationItemId: item.id,
+            company: companyName,
+            contactName: contact.name,
+            message: `Verification contact added: ${contact.name}`,
+          });
+
+          if (contact.respondedAt) {
+            timeline.push({
+              timestamp: contact.respondedAt,
+              type: "CONTACT_RESPONDED",
+              verificationCaseId: verificationCase.id,
+              verificationItemId: item.id,
+              verificationContactId: contact.id,
+              company: companyName,
+              contactName: contact.name,
+              message: `${contact.name} submitted verification response`,
+            });
+          }
+
+          for (const doc of contact.verificationDocuments) {
+            timeline.push({
+              timestamp: doc.uploadedAt,
+              type: "DOCUMENT_UPLOADED",
+              verificationCaseId: verificationCase.id,
+              verificationItemId: item.id,
+              verificationContactId: contact.id,
+              company: companyName,
+              contactName: contact.name,
+              message: `${doc.type.replace("_", " ")} uploaded by ${contact.name}`,
+              metadata: {
+                fileUrl: doc.fileUrl,
+                documentType: doc.type,
+              },
+            });
+          }
+
+          for (const call of contact.callingLogs) {
+            timeline.push({
+              timestamp: call.callTime,
+              type: "CALL_LOGGED",
+              verificationCaseId: verificationCase.id,
+              verificationItemId: item.id,
+              verificationContactId: contact.id,
+              company: companyName,
+              contactName: contact.name,
+              message: `Manual call logged with ${contact.name}: ${call.outcome}`,
+            });
+          }
+        }
+
+        for (const discrepancy of item.verificationDiscrepancies) {
+          timeline.push({
+            timestamp: discrepancy.createdAt,
+            type: "DISCREPANCY_CREATED",
+            verificationCaseId: verificationCase.id,
+            verificationItemId: item.id,
+            company: companyName,
+            message: `Discrepancy found in ${discrepancy.questionKey}`,
+            metadata: {
+              claimedValue: discrepancy.claimedValue,
+              verifiedValue: discrepancy.verifiedValue,
+              status: discrepancy.status,
+            },
+          });
+        }
+
+        if (item.completedAt) {
+          timeline.push({
+            timestamp: item.completedAt,
+            type: "ITEM_COMPLETED",
+            verificationCaseId: verificationCase.id,
+            verificationItemId: item.id,
+            company: companyName,
+            message: `${companyName} verification completed`,
+          });
+        }
+      }
+
+      if (verificationCase.completedAt) {
+        timeline.push({
+          timestamp: verificationCase.completedAt,
+          type: "CASE_COMPLETED",
+          verificationCaseId: verificationCase.id,
+          message: "Verification case completed",
+        });
+      }
+    }
+
+    timeline.sort(
+      (a, b) =>
+        new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
+    );
+
+    res.json({ candidateId, timeline });
+  } catch (err) {
+    next(err);
+  }
+};
 
 export const getCandidateSummary = async (
   req: Request,
