@@ -28,6 +28,21 @@ model Candidate {
   @@index([createdAt])
 }
 
+model CandidateVerificationResponse {
+  id                 String       @id @default(uuid())
+  verificationItemId String
+  questionKey        String
+  questionLabel      String
+  questionType       QuestionType
+  answer             Json
+  createdAt          DateTime     @default(now())
+
+  verificationItem VerificationItem @relation(fields: [verificationItemId], references: [id])
+
+  @@unique([verificationItemId, questionKey])
+  @@index([verificationItemId])
+}
+
 model CandidateNote {
   id          String   @id @default(uuid())
   candidateId String
@@ -168,15 +183,17 @@ model VerificationItem {
   status                   VerificationStatus
   mandatory                Boolean
   executionMode            ExecutionMode
+  metadata                 Json?
   startedAt                DateTime?
   completedAt              DateTime?
   createdAt                DateTime           @default(now())
   updatedAt                DateTime           @updatedAt()
 
-  verificationCase          VerificationCase          @relation(fields: [verificationCaseId], references: [id])
-  verificationTypeConfig    VerificationTypeConfig    @relation(fields: [verificationTypeConfigId], references: [id])
-  contacts                  VerificationContact[]
-  verificationDiscrepancies VerificationDiscrepancy[]
+  verificationCase               VerificationCase                @relation(fields: [verificationCaseId], references: [id])
+  verificationTypeConfig         VerificationTypeConfig          @relation(fields: [verificationTypeConfigId], references: [id])
+  contacts                       VerificationContact[]
+  verificationDiscrepancies      VerificationDiscrepancy[]
+  candidateVerificationResponses CandidateVerificationResponse[]
 
   @@index([verificationCaseId])
   @@index([status])

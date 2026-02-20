@@ -4,7 +4,7 @@ import {
   createCandidate,
   // getCandidateOverview,
   getCandidateSummary,
-  // getEmploymentTimeline,
+  getEmploymentTimeline,
   getVerificationQueue,
   // searchCandidates,
   uploadCandidateResume,
@@ -18,7 +18,7 @@ const router = Router();
 
 router.get("/queue", getVerificationQueue);
 // router.get("/search", searchCandidates);
-// router.get("/:candidateId/employment-timeline", getEmploymentTimeline);
+router.get("/:candidateId/employment-timeline", getEmploymentTimeline);
 router.get(
   "/:candidateId/summary",
   requireRole([UserRole.ADMIN, UserRole.HR]),

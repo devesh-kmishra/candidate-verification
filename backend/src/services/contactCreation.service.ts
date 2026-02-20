@@ -1,5 +1,6 @@
 import { Prisma } from "../../generated/prisma/client";
 import {
+  QuestionType,
   VerificationContactStatus,
   VerificationStatus,
 } from "../../generated/prisma/enums";
@@ -18,6 +19,13 @@ type SubmittedContact = {
 
 type SubmittedSection = {
   verificationItemId: string;
+  answers: {
+    questionKey: string;
+    questionLabel: string;
+    questionType: QuestionType;
+    answer: Prisma.InputJsonValue;
+  }[];
+  metadata?: Prisma.InputJsonValue;
   contacts: SubmittedContact[];
 };
 
@@ -82,6 +90,25 @@ export async function createContactsFromCandidateForm(
 
       if (maxContacts && section.contacts.length > maxContacts) {
         throw new Error(`Maximum ${maxContacts} contacts allowed`);
+      }
+
+      if (section.metadata) {
+        await tx.verificationItem.update({
+          where: { id: item.id },
+          data: { metadata: section.metadata },
+        });
+      }
+
+      if (section.answers && section.answers.length > 0) {
+        await tx.candidateVerificationResponse.createMany({
+          data: section.answers.map((a) => ({
+            verificationItemId: item.id,
+            questionKey: a.questionKey,
+            questionLabel: a.questionLabel,
+            questionType: a.questionType,
+            answer: a.answer,
+          })),
+        });
       }
 
       let index = 0;
