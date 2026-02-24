@@ -13,12 +13,21 @@ import CandidateDatabase from "./pages/candidate/CandidateDatabase";
 import VerificationSettings from "./pages/admin/VerificationSettings";
 import CaseDetailsPage from "./pages/case/CaseDetailsPage";
 import VerificationItemDetailsPage from "./pages/case/VerificationItemDetailsPage";
+import CandidateVerificationForm from "./pages/candidate/CandidateVerificationForm";
+import VerificationContactResponseForm from "./pages/hr/VerificationContactFormResponse";
 
 const App = () => {
   return (
     <div className="h-screen overflow-hidden bg-white text-slate-900 font-(--font-inter)">
       <Routes>
         <Route path="/" element={<HomePage />} />
+
+        <Route path="/verify/:token" element={<CandidateVerificationForm />} />
+
+        <Route
+          path="/verify/contact/:token"
+          element={<VerificationContactResponseForm />}
+        />
 
         {/* ADMIN LAYOUT */}
 
