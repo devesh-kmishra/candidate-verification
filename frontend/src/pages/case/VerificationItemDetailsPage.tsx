@@ -74,6 +74,14 @@ const ContactCard = ({
           <p className="text-white/50 text-sm">{contact.email}</p>
 
           <p className="text-white/40 text-xs">Status: {contact.source}</p>
+
+          <p className="text-white/40 text-xs">
+            Claimed company: {contact.claimedCompany}
+          </p>
+
+          <p className="text-white/40 text-xs">
+            Claimed designation: {contact.claimedDesignation}
+          </p>
         </div>
 
         <button

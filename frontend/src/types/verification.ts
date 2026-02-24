@@ -77,13 +77,13 @@ export type VerificationCaseDTO = {
   startedAt: string;
   completedAt?: string | null;
   items: VerificationItemDTO[];
-  timeline: VerificationTimelineEventDTO[]
+  timeline: VerificationTimelineEventDTO[];
 };
 
 export type VerificationItemDTO = {
   id: string;
   verificationTypeConfigId: string;
-  verificationType: VerificationType; 
+  verificationType: VerificationType;
   status: VerificationStatus;
   mandatory: boolean;
   executionMode: ExecutionMode;
@@ -91,7 +91,7 @@ export type VerificationItemDTO = {
   completedAt?: string | null;
   contacts: VerificationContactDTO[];
   discrepancies: VerificationDiscrepanciesDTO[];
-  timeline?: VerificationTimelineEventDTO[]
+  timeline?: VerificationTimelineEventDTO[];
 };
 
 export type VerificationContactDTO = {
@@ -102,6 +102,8 @@ export type VerificationContactDTO = {
   source: VerificationContactStatus;
   contactedAt?: string | null;
   respondedAt?: string | null;
+  claimedCompany?: string | null;
+  claimedDesignation?: string | null;
   response: VerificationResponseDTO[];
   documents: VerificationDocumentDTO[];
 };
