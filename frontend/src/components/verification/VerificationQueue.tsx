@@ -5,6 +5,7 @@ import type { Candidate } from "../../types/candidates";
 import { timeAgo } from "../../utils/time";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import toast from "react-hot-toast";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL as string;
 
@@ -12,6 +13,7 @@ const statusProgressColorMap = {
   completed: "bg-green-500",
   pending: "bg-orange-500",
   failed: "bg-red-500",
+  in_progress: "bg-blue-500",
 } as const;
 
 function capitalizeFirstLetter(string: string) {
@@ -22,6 +24,13 @@ const searchCandidates = async (query: string) => {
   const res = await axios.get(`${API_BASE_URL}/api/candidates/search`, {
     params: { q: query },
   });
+  return res.data;
+};
+
+const startVerification = async (candidateId: string) => {
+  const res = await axios.post(
+    `${API_BASE_URL}/api/verification/cases/${candidateId}/start`,
+  );
   return res.data;
 };
 
@@ -44,7 +53,34 @@ export default function VerificationQueue() {
   const navigate = useNavigate();
 
   const handleOnClick = (candidateId: string) => {
-   navigate(`/verification/candidate-verification/${candidateId}`);
+    navigate(`/verification/candidate-verification/${candidateId}`);
+  };
+
+  const handleStartVerification = async (candidateId: string) => {
+    try {
+      toast.loading("Starting verification...", { id: candidateId });
+      await startVerification(candidateId);
+      toast.success(
+        "Verification started. Email and what's app notifications sent",
+        { id: candidateId },
+      );
+
+      setCandidates((prev) =>
+        prev.map((c) =>
+          c.id === candidateId
+            ? {
+                ...c,
+                verificationStatus: "PENDING",
+                lastUpdated: new Date().toISOString(),
+              }
+            : c,
+        ),
+      );
+    } catch (error) {
+      console.log("Failed to start verification", error);
+
+      toast.error("Failed to start verification", { id: candidateId });
+    }
   };
 
   useEffect(() => {
@@ -194,9 +230,11 @@ export default function VerificationQueue() {
                       className={`rounded-full px-3 py-1 text-xs ${
                         c.verificationStatus === "completed"
                           ? "bg-green-500/20 text-green-400"
-                          : c.verificationStatus === "pending"
+                          : c.verificationStatus === "PENDING"
                             ? "bg-orange-500/20 text-orange-400"
-                            : "bg-red-500/20 text-red-400"
+                            : c.verificationStatus === "in_progress"
+                              ? "bg-blue-500/20 text-blue-400"
+                              : "bg-red-500/20 text-red-400"
                       }`}
                     >
                       {capitalizeFirstLetter(c.verificationStatus)}
@@ -239,7 +277,8 @@ export default function VerificationQueue() {
                     {c.lastUpdated ? timeAgo(c.lastUpdated) : "--"}
                   </td>
 
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3 flex gap-2">
+                    {/* View Details Button */}
                     <button
                       onClick={() => handleOnClick(c.id)}
                       className="flex items-center gap-2 rounded-lg border border-white/10 px-3 py-1.5 text-xs text-blue-400 hover:bg-white/5"
@@ -247,6 +286,16 @@ export default function VerificationQueue() {
                       <Eye className="h-4 w-4" />
                       View Details
                     </button>
+
+                    {/* Start Verification Button */}
+                    {c.verificationStatus === "PENDING" && (
+                      <button
+                        onClick={() => handleStartVerification(c.id)}
+                        className="flex items-center gap-2 rounded-lg border border-orange-500/30 bg-orange-500/10 px-3 py-1.5 text-xs text-orange-400 hover:bg-orange-500/20"
+                      >
+                        Start Verification
+                      </button>
+                    )}
                   </td>
                 </tr>
               );

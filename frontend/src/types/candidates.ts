@@ -1,9 +1,11 @@
 export type VerificationStatus =
-  | "pending"
+  | "PENDING"
   | "completed"
   | "clear"
   | "discrepancy"
-  | "failed";
+  | "failed"
+   | "in_progress";
+
 
 export interface Candidate {
   c: any;

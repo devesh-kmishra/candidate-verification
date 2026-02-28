@@ -8,7 +8,7 @@ import type {
   VerificationCaseDTO,
   VerificationConfigDTO,
   VerificationItemDTO,
-  VerificationTimelineEventDTO
+  VerificationTimelineEventDTO,
 } from "../types/verification";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL as string;
@@ -68,24 +68,25 @@ export const VerificationHRAPI = {
     return axios.post(`${API_BASE_URL}/hr/verification/contacts`, payload);
   },
 
-  startVerification(caseId: string): Promise<void> {
-    return axios.post(`${API_BASE_URL}/hr/verification/cases/${caseId}/start`);
+  startVerification(caseId: string): Promise<{ success: boolean }> {
+    return axios
+      .post(`${API_BASE_URL}/hr/verification/cases/${caseId}/start`)
+      .then((res) => res.data);
   },
 
   /* NEW ENTERPRISE APIs */
 
   getVerificationItem(
-  caseId: string,
-  itemId: string
-): Promise<{
-  item: VerificationItemDTO;
-  timeline: VerificationTimelineEventDTO[];
-}> {
-  return axios
-    .get(`${API_BASE_URL}/hr/verification/cases/${caseId}/items/${itemId}`)
-    .then((res) => res.data);
-},
-  
+    caseId: string,
+    itemId: string,
+  ): Promise<{
+    item: VerificationItemDTO;
+    timeline: VerificationTimelineEventDTO[];
+  }> {
+    return axios
+      .get(`${API_BASE_URL}/hr/verification/cases/${caseId}/items/${itemId}`)
+      .then((res) => res.data);
+  },
 
   resendContact(
     caseId: string,
@@ -97,10 +98,7 @@ export const VerificationHRAPI = {
     );
   },
 
-  markItemComplete(
-    caseId: string,
-    itemId: string,
-  ): Promise<void> {
+  markItemComplete(caseId: string, itemId: string): Promise<void> {
     return axios.post(
       `${API_BASE_URL}/hr/verification/cases/${caseId}/items/${itemId}/complete`,
     );
@@ -112,11 +110,7 @@ export const VerificationHRAPI = {
       .then((res) => res.data);
   },
 
-  requestClarification(
-    caseId: string,
-    itemId: string,
-    message: string,
-  ) {
+  requestClarification(caseId: string, itemId: string, message: string) {
     return axios.post(
       `${API_BASE_URL}/hr/verification/cases/${caseId}/items/${itemId}/clarification`,
       { message },
