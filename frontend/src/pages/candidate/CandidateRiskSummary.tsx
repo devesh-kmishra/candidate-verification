@@ -12,29 +12,52 @@ const CandidateRiskSummary = ({ candidateId }: { candidateId: string }) => {
   const [data, setData] = useState<SummaryResponse | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (!candidateId) return;
+ useEffect(() => {
+  if (!candidateId) return;
 
-    const controller = new AbortController();
+  const controller = new AbortController();
 
-    const fetchSummary = async () => {
-      try {
-        const res = await fetch(
-          `${API_BASE_URL}/api/candidates/${candidateId}/summary`,
-          { signal: controller.signal },
-        );
-        if (!res.ok) throw new Error("Failed to fetch summary");
-        setData(await res.json());
-      } catch (err) {
-        console.error(err);
-      } finally {
+  const fetchSummary = async () => {
+    try {
+      setLoading(true);
+
+      const res = await fetch(
+        `${API_BASE_URL}/api/candidates/${candidateId}/summary`,
+        { signal: controller.signal },
+      );
+
+      if (!res.ok) throw new Error("Failed to fetch summary");
+
+      const result: SummaryResponse = await res.json();
+
+      setData(result);
+
+    } catch (err: any) {
+
+      // ✅ Ignore AbortError (important fix)
+      if (err.name === "AbortError") {
+        return;
+      }
+
+      console.error("Failed to fetch candidate summary:", err);
+
+    } finally {
+
+      // ✅ Only stop loading if request was NOT aborted
+      if (!controller.signal.aborted) {
         setLoading(false);
       }
-    };
 
-    fetchSummary();
-    return () => controller.abort();
-  }, [candidateId]);
+    }
+  };
+
+  fetchSummary();
+
+  return () => {
+    controller.abort();
+  };
+
+}, [candidateId]);
 
   if (loading) {
     return (

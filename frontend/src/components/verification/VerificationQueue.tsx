@@ -44,7 +44,7 @@ export default function VerificationQueue() {
   const navigate = useNavigate();
 
   const handleOnClick = (candidateId: string) => {
-    navigate(`/api/candidates/${candidateId}/overview`);
+   navigate(`/verification/candidate-verification/${candidateId}`);
   };
 
   useEffect(() => {

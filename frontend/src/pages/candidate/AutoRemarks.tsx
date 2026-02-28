@@ -5,7 +5,7 @@ type EmploymentItem =
   SummaryResponse["employmentBreakdown"][number];
 
 type Props = {
-  remarks: SummaryResponse["remarks"];
+  remarks?: SummaryResponse["remarks"];
   employmentBreakdown: EmploymentItem[];
 };
 
@@ -15,7 +15,7 @@ const statusMeta = {
   PENDING: "text-yellow-400",
 };
 
-const AutoRemarks = ({ remarks, employmentBreakdown }: Props) => {
+const AutoRemarks = ({ remarks = [], employmentBreakdown = [  ] }: Props) => {
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
@@ -33,12 +33,12 @@ const AutoRemarks = ({ remarks, employmentBreakdown }: Props) => {
       </h3>
 
       <div className="space-y-3">
-        {remarks.length === 0 ? (
+        {remarks && remarks.length === 0 ? (
           <p className="text-sm text-white/50">
             No system remarks generated
           </p>
         ) : (
-          remarks.map((r, i) => (
+          remarks?.map((r, i) => (
             <div key={i} className="flex gap-3 text-sm text-white/75">
               <span className="mt-1 h-1.5 w-1.5 rounded-full bg-orange-400" />
               {r}
